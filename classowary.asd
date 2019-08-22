@@ -13,5 +13,11 @@
   :homepage "https://github.com/Shinmera/classowary"
   :serial T
   :components ((:file "package")
+               (:file "conditions")
+               (:file "symbol")
+               (:file "expression")
+               (:file "constraint")
+               (:file "cassowary")
                (:file "documentation"))
-  :depends-on (:documentation-utils))
+  :depends-on (:documentation-utils)
+  :in-order-to ((asdf:test-op (asdf:test-op :classowary-test))))
