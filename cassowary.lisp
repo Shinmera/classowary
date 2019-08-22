@@ -81,9 +81,8 @@
                             (term-multiplier term))))
                   (when (or (< r min-ratio)
                             (and (~= r min-ratio)
-                                 ;; WTF: I guess this  is a tie-breaker to just prefer the earlier variable or something?
-                                 (string< (expression-key expression)
-                                          exit)))
+                                 (< (get (expression-key expression) 'id)
+                                    (get exit 'id))))
                     (setf min-ratio r)
                     (setf exit (expression-key expression)))))))
           (assert (not (null exit))
