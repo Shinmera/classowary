@@ -88,15 +88,12 @@
                 (finish (cass:add-constraint c5))
                 (dump)
                 (finish (cass:remove-constraint c5)))
-              (dump)
               
-              (format T "~&  >> 5~%")
               (let ((c5 (finish (cass:make-constraint solver cass:+REQUIRED+))))
                 (finish (cass:add-term c5 xl 1f0))
                 (finish (setf (cass:relation c5) '=))
                 (finish (cass:add-constant c5 0f0))
-                (finish (cass:add-constraint c5))
-                (dump))
+                (finish (cass:add-constraint c5)))
 
               (let ((c6 (finish (cass:clone-constraint c4 cass:+REQUIRED+))))
                 (finish (cass:add-constraint c6))

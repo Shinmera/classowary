@@ -147,8 +147,8 @@
       (setf (solver-infeasible-expressions solver)
             (delete expression (solver-infeasible-expressions solver) :test #'eq))
       (optimize-for tmp solver)
-      (let ((state (unless (~zerop (expression-constant expression))
-                     (make-condition 'expression-unbound :expression expression :solver solver))))
+      (let ((state (unless (~zerop (expression-constant tmp))
+                     (make-condition 'expression-unbound :expression tmp :solver solver))))
         (macrolet ((ret ()
                      `(if state
                           (signal state)
@@ -244,7 +244,7 @@
         while expression
         do (let ((min-ratio MOST-POSITIVE-SINGLE-FLOAT)
                  (enter NIL)
-                 (exit NIL))
+                 (exit (expression-key expression))
              (setf (expression-infeasible-p expression) NIL)
              (when (< (expression-constant expression) 0f0)
                (do-terms (term expression)
