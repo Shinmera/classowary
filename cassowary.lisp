@@ -300,9 +300,7 @@
          (expression (make-expression solver constraint)))
     (handler-bind ((cassowary-condition (lambda (e)
                                           (declare (ignore e))
-                                          (remove-errors solver constraint)
-                                          ;; reset symbol count
-                                          )))
+                                          (remove-errors solver constraint))))
       (try-add-expression solver expression constraint))
     (optimize-for (solver-objective solver) solver)
     (when (solver-auto-update solver)
