@@ -14,6 +14,12 @@
   (print-unreadable-object (term stream :type T)
     (format stream "~s ~f" (term-key term) (term-multiplier term))))
 
+(defmethod describe-object ((term term) stream)
+  (format stream " ~:[+~;-~] " (< (term-multiplier term) 0))
+  (unless (~= 1f0 (abs (term-multiplier term)))
+    (format stream "~f*" (abs (term-multiplier term))))
+  (write-sym (term-key term) stream))
+
 (defstruct (expression (:constructor %make-expression (&optional key)))
   (key NIL :type symbol)
   (infeasible-p NIL :type boolean)
@@ -22,10 +28,11 @@
 
 (defmethod print-object ((expression expression) stream)
   (print-unreadable-object (expression stream :type T)
-    (format stream "~s ~f ~s"
+    (format stream "~s ~f"
             (expression-key expression)
             (expression-constant expression))
-    (do-terms )))
+    (do-terms (term expression)
+      (describe-object term stream))))
 
 (defun constant-p (expression)
   (= 0 (hash-table-count (expression-terms expression))))
@@ -57,10 +64,7 @@
   (write-sym (expression-key expression) stream)
   (format stream " = ~f" (expression-constant expression))
   (do-terms (term expression)
-    (format stream " ~:[+~;-~] " (< (term-multiplier term) 0))
-    (unless (~= 1f0 (abs (term-multiplier term)))
-      (format stream " ~f*" (abs (term-multiplier term))))
-    (write-sym (term-key term) stream))
+    (describe-object term stream))
   (when (expression-infeasible-p expression)
     (format stream " INFEASIBLE")))
 

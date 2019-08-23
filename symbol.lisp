@@ -13,9 +13,16 @@
               (eq type 'error)
               (eq type 'slack)
               (eq type 'dummy)))
-  (let ((sym (make-symbol (string id))))
+  (let* ((id (incf *symbol-ids*))
+         (sym (make-symbol (format NIL "~a~a"
+                                   (ecase type
+                                     (external "V")
+                                     (slack "S")
+                                     (error "E")
+                                     (dummy "D"))
+                                   id))))
     (setf (get sym 'type) type)
-    (setf (get sym 'id) (incf *symbol-ids*))
+    (setf (get sym 'id) id)
     sym))
 
 (defun external-p (symbol)

@@ -217,7 +217,7 @@
                (null (constraint-marker constraint))
                (null (constraint-relation constraint)))
           () 'assertion-violated)
-  (unless (eq relation '<=)
+  (unless (eq relation '>=)
     (multiply (constraint-expression constraint) -1f0))
   (setf (constraint-relation constraint) relation)
   relation)
