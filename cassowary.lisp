@@ -143,7 +143,6 @@
     (with-protection (setf (find-expression solver a) NIL)
       (add-expression tmp expression 1f0)
       (put-expression solver a expression)
-      (clear-expression expression)
       ;; KLUDGE: not sure if this is necessary, but it seems to me like it should be.
       (setf (solver-infeasible-expressions solver)
             (delete expression (solver-infeasible-expressions solver) :test #'eq))
@@ -154,16 +153,13 @@
                      `(if state
                           (signal state)
                           (return-from add-with-artificial T))))
-          (clrhash (expression-terms expression))
           (when-ok (get-expression solver a tmp)
             (when (constant-p tmp)
-              (clrhash (expression-terms tmp))
               (ret))
             (let ((entry (do-terms (term tmp)
                            (when (pivotable-p (term-key term))
                              (return (term-key term))))))
               (unless entry
-                (clrhash (expression-terms tmp))
                 (error 'expression-unbound :expression tmp :solver solver))
               (solve-for tmp entry a)
               (substitute-expressions solver entry tmp)
@@ -358,7 +354,7 @@
   strength)
 
 (defun add-edit (variable strength)
-  (assert (and (not (null variable)) (not (null (variable-constraint variable))))
+  (assert (and (not (null variable)) (null (variable-constraint variable)))
           () 'assertion-violated)
   (assert (variable-symbol variable))
   (when (<= +STRONG+ strength) (setf strength +STRONG+))

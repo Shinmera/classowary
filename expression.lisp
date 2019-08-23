@@ -109,5 +109,5 @@
 (defun substitute (expression entry to-substitute)
   (let ((term (find-term entry expression)))
     (when term
-      (delete-term expression entry)
+      (delete-term entry expression)
       (add-expression expression to-substitute (term-multiplier term)))))
