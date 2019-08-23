@@ -137,8 +137,8 @@
 
                 (format T "~&suggest to 0.0~%")
                 (finish (cass:suggest xm 0f0))
-                (dump)
                 (finish (cass:update-variables solver))
+                (dump)
                 (printvars)
 
                 (format T "~&suggest to 70.0~%")
@@ -147,6 +147,7 @@
                 (dump)
                 (printvars)
 
+                (format T "~&delete edit~%")
                 (finish (cass:delete-edit xm))
                 (finish (cass:update-variables solver))
                 (dump)
