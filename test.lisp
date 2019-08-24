@@ -12,9 +12,9 @@
 
 (define-test classowary)
 
+;;; Tests from the Amoeba implementation
 (define-test all
   :parent classowary
-  (setf cass::*symbol-ids* 0)
   (let* ((solver (finish (cass:make-solver)))
          (xl (finish (cass:make-variable solver)))
          (xm (finish (cass:make-variable solver)))
@@ -25,7 +25,7 @@
     (false (cass:edited-p xm))
     (false (cass:edited-p xr))
     (finish (cass:delete-variable (cass:make-variable solver)))
-    (fail (setf (cass:relation NIL) '>=) 'cass:assertion-violated)
+    (fail (setf (cass:relation NIL) '>=))
     (let ((c1 (finish (cass:make-constraint solver))))
       (finish (cass:add-term c1 xl 1f0))
       (finish (setf (cass:relation c1) '>=))
@@ -142,7 +142,6 @@
 
 (define-test binary-tree
   :parent classowary
-  :depends-on (all)
   (let* ((solver (cass:make-solver))
          (current-row-points-count 1)
          (current-row-first-point-index 0)
