@@ -37,12 +37,6 @@
 (defun constant-p (expression)
   (= 0 (hash-table-count (expression-terms expression))))
 
-(defun ~= (a b)
-  (< (abs (- a b)) 1e-4))
-
-(defun ~zerop (float)
-  (~= float 0f0))
-
 (defun clear-expression (expression)
   (setf (expression-key expression) NIL)
   (setf (expression-infeasible-p expression) NIL)

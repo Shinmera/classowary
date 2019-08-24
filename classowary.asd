@@ -13,6 +13,7 @@
   :homepage "https://github.com/Shinmera/classowary"
   :serial T
   :components ((:file "package")
+               (:file "toolkit")
                (:file "conditions")
                (:file "symbol")
                (:file "expression")
