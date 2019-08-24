@@ -190,6 +190,7 @@
                           (cass:add-term pc (aref arrx (+ current-row-first-point-index point -1)) 0.5f0)
                           (finish (cass:add-constraint pc))
                           (incf parent-point)))))
+    (cass:update-variables solver)
     ;; (loop for i from 0 below (+ current-row-first-point-index current-row-points-count)
     ;;       do (format T "Point ~d: (~f, ~f)~%" i (cass:value (aref arrx i)) (cass:value (aref arry i))))
     ))
@@ -270,9 +271,7 @@
 
 (define-test suggest
   :parent classowary
-  (let* ((strength1 cass:+REQUIRED+)
-         (strength2 cass:+REQUIRED+)
-         (width 76)
+  (let* ((width 76)
          (delta 0)
          (pos)
          (solver (cass:make-solver))
@@ -307,9 +306,9 @@
     (make-constraint solver :required right-child-l 1 '= 0
                      splitter-bar-r 1)
 
-    (make-constraint solver strength1 right-child-r 1 '>= 1
+    (make-constraint solver :required right-child-r 1 '>= 1
                      splitter-r 1)
-    (make-constraint solver strength2 left-child-w 1 '= 256)
+    (make-constraint solver :required left-child-w 1 '= 256)
 
     (make-constraint solver :required splitter-l 1 '= 0)
     (make-constraint solver :required splitter-r 1 '= width)
@@ -317,15 +316,12 @@
     (loop for pos from -10 below 86
           do (cass:suggest splitter-bar-l pos)
              (cass:update-variables solver)
-             (format T "pos: ~4d | splitter_l l=~2d, w=~2d, r=~2d ~
-                                 | left_child_l l=~2d, w=~2d, r=~2d ~
-                                 | splitter_bar_l l=~2d, w=~2d, r=~2d ~
-                                 | right_child_l l=~2d, w=~2d, r=~2d | ~%"
-                     pos
-                     (round (cass:value splitter-l)) (round (cass:value splitter-w)) (round (cass:value splitter-r))
-                     (round (cass:value left-child-l)) (round (cass:value left-child-w)) (round (cass:value left-child-r))
-                     (round (cass:value splitter-bar-l)) (round (cass:value splitter-bar-w)) (round (cass:value splitter-bar-r))
-                     (round (cass:value right-child-l)) (round (cass:value right-child-w)) (round (cass:value right-child-r))))))
+             (is =   0 (cass:value splitter-l))
+             (is =  76 (cass:value splitter-w))
+             (is =  76 (cass:value splitter-r))
+             (is = 256 (cass:value left-child-w))
+             (is =   6 (cass:value splitter-bar-w))
+             (is =  77 (cass:value right-child-r)))))
 
 (define-test cycling
   :parent classowary
