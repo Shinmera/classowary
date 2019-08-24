@@ -6,12 +6,7 @@
 
 (in-package #:org.shirakumo.classowary)
 
-(defconstant +REQUIRED+ 1000000000f0)
-(defconstant +STRONG+ 1000000f0)
-(defconstant +MEDIUM+ 1000f0)
-(defconstant +WEAK+ 1f0)
-
-(defstruct (solver (:constructor %make-solver ()))
+(defstruct (solver (:constructor %make-solver (&key auto-update)))
   (objective (%make-expression) :type expression)
   (variables (make-hash-table :test 'eq) :type hash-table)
   (constraints (make-hash-table :test 'eq) :type hash-table)
@@ -146,8 +141,8 @@
     (when (variable-constraint variable)
       (remove-constraint (variable-constraint variable)))))
 
-(defun make-constraint (solver strength)
-  (let ((constraint (%make-constraint strength solver)))
+(defun make-constraint (solver &key (strength :required))
+  (let ((constraint (%make-constraint (->strength strength) solver)))
     (setf (find-constraint solver (expression-key (constraint-expression constraint))) constraint)))
 
 (defun delete-constraint (constraint)
@@ -158,11 +153,13 @@
       (do-terms (term (constraint-expression constraint))
         (delete-variable (find-variable solver (term-key term)))))))
 
-(defun clone-constraint (other strength)
+(defun clone-constraint (other &key strength)
   (when other
     (let ((constraint (make-constraint
                        (constraint-solver other)
-                       (or strength (constraint-strength other)))))
+                       :strength (if strength
+                                     (->strength strength)
+                                     (constraint-strength other)))))
       (merge-constraint-into constraint other 1f0)
       (setf (constraint-relation constraint) (constraint-relation other))
       constraint)))
