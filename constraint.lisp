@@ -144,6 +144,51 @@
   (let ((constraint (%make-constraint (->strength strength) solver)))
     (setf (find-constraint (expression-key (constraint-expression constraint)) solver) constraint)))
 
+(defun extract-terms (thing mult)
+  (etypecase thing
+    (real
+     (list (* mult thing)))
+    (symbol
+     (list (list thing mult)))
+    (cons
+     (destructuring-bind (op . args) thing
+       (ecase op
+         (* (destructuring-bind (a b) args
+              (cond ((and (realp a) (realp b))
+                     (extract-terms (* a b) mult))
+                    ((realp a)
+                     (extract-terms b (* a mult)))
+                    (T
+                     (extract-terms a (* b mult))))))
+         (/ (destructuring-bind (a b) args
+              (cond ((and (realp a) (realp b))
+                     (extract-terms (/ a b) mult))
+                    ((realp a)
+                     (error "Cannot simulate the constraint ~a" thing))
+                    (T
+                     (extract-terms a (* b mult))))))
+         (+ (loop for term in args
+                  append (extract-terms term (* +1 mult))))
+         (- (loop for term in args
+                  append (extract-terms term (* -1 mult)))))))))
+
+(defmacro constrain (solver constraint &rest args &key strength)
+  (declare (ignore strength))
+  (destructuring-bind (relation lhs rhs) constraint
+    (let ((constraint (gensym "CONSTRAINT")))
+      (flet ((expand-terms (terms)
+               (loop for thing in (extract-terms terms 1)
+                     collect (etypecase thing
+                               (real `(add-constant ,constraint ,thing))
+                               (symbol `(add-term ,constraint ,thing 1f0))
+                               (cons (destructuring-bind (var mult) thing
+                                       `(add-term ,constraint ,var ,mult)))))))
+        `(let ((,constraint (make-constraint ,solver ,@args)))
+           ,@(expand-terms lhs)
+           (setf (relation ,constraint) ',relation)
+           ,@(expand-terms rhs)
+           (add-constraint ,constraint))))))
+
 (defun delete-constraint (constraint)
   (let ((solver (constraint-solver constraint)))
     (remove-constraint constraint)

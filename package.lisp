@@ -43,6 +43,7 @@
    #:clone-constraint
    #:reset-constraint
    #:delete-constraint
+   #:constrain
    #:add-term
    #:relation
    #:add-constant
