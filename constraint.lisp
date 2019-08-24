@@ -18,10 +18,10 @@
 (defmethod print-object ((solver solver) stream)
   (print-unreadable-object (solver stream :type T :identity T)))
 
-(defun find-variable (solver symbol)
+(defun find-variable (symbol solver)
   (gethash symbol (solver-variables solver)))
 
-(defun (setf find-variable) (variable solver symbol)
+(defun (setf find-variable) (variable symbol solver)
   (if variable
       (setf (gethash symbol (solver-variables solver)) variable)
       (remhash symbol (solver-variables solver)))
@@ -32,28 +32,28 @@
          do (progn ,@body)
          finally (return ,result)))
 
-(defun find-expression (solver symbol)
+(defun find-expression (symbol solver)
   (gethash symbol (solver-expressions solver)))
 
-(defun (setf find-expression) (expression solver symbol)
+(defun (setf find-expression) (expression symbol solver)
   (if expression
       (setf (gethash symbol (solver-expressions solver)) expression)
       (remhash symbol (solver-expressions solver)))
   expression)
 
-(defun ensure-expression (solver symbol)
+(defun ensure-expression (symbol solver)
   (or (gethash symbol (solver-expressions solver))
-      (setf (find-expression solver symbol) (%make-expression symbol))))
+      (setf (find-expression symbol solver) (%make-expression symbol))))
 
 (defmacro do-expressions ((expression solver &optional result) &body body)
   `(loop for ,expression being the hash-values of (solver-expressions ,solver)
          do (progn ,@body)
          finally (return ,result)))
 
-(defun find-constraint (solver symbol)
+(defun find-constraint (symbol solver)
   (gethash symbol (solver-constraints solver)))
 
-(defun (setf find-constraint) (constraint solver symbol)
+(defun (setf find-constraint) (constraint symbol solver)
   (if constraint
       (setf (gethash symbol (solver-constraints solver)) constraint)
       (remhash symbol (solver-constraints solver)))
@@ -133,25 +133,25 @@
 
 (defun make-variable (solver)
   (let ((variable (%make-variable (mksym 'external 'variable) solver)))
-    (setf (find-variable solver (variable-symbol variable)) variable)))
+    (setf (find-variable (variable-symbol variable) solver) variable)))
 
 (defun delete-variable (variable)
   (when (and variable (<= (decf (variable-use-count variable)) 0))
-    (setf (find-variable (variable-solver variable) (variable-symbol variable)) NIL)
+    (setf (find-variable (variable-symbol variable) (variable-solver variable)) NIL)
     (when (variable-constraint variable)
       (remove-constraint (variable-constraint variable)))))
 
 (defun make-constraint (solver &key (strength :required))
   (let ((constraint (%make-constraint (->strength strength) solver)))
-    (setf (find-constraint solver (expression-key (constraint-expression constraint))) constraint)))
+    (setf (find-constraint (expression-key (constraint-expression constraint)) solver) constraint)))
 
 (defun delete-constraint (constraint)
   (when constraint
     (let ((solver (constraint-solver constraint)))
       (remove-constraint constraint)
-      (setf (find-constraint solver (expression-key (constraint-expression constraint))) NIL)
+      (setf (find-constraint (expression-key (constraint-expression constraint)) solver) NIL)
       (do-terms (term (constraint-expression constraint))
-        (delete-variable (find-variable solver (term-key term)))))))
+        (delete-variable (find-variable (term-key term) solver))))))
 
 (defun clone-constraint (other &key strength)
   (when other
@@ -172,7 +172,7 @@
   (when (eq '>= (constraint-relation constraint))
     (setf multiplier (- multiplier)))
   (do-terms (term (constraint-expression other) constraint)
-    (use-variable (find-variable (constraint-solver constraint) (term-key term)))
+    (use-variable (find-variable (term-key term) (constraint-solver constraint)))
     (add-variable (constraint-expression constraint) (term-key term) (* (term-multiplier term) multiplier))))
 
 (defun reset-constraint (constraint)
@@ -180,7 +180,7 @@
     (remove-constraint constraint)
     (setf (constraint-relation constraint) NIL)
     (do-terms (term (constraint-expression constraint))
-      (delete-variable (find-variable (constraint-solver constraint) (term-key term))))
+      (delete-variable (find-variable (term-key term) (constraint-solver constraint))))
     (reset-expression (constraint-expression constraint))
     constraint))
 

@@ -70,19 +70,22 @@
 (defun find-term (symbol expression)
   (gethash symbol (expression-terms expression)))
 
+(defun (setf find-term) (term symbol expression)
+  (if term
+      (setf (gethash symbol (expression-terms expression)) term)
+      (remhash symbol (expression-terms expression)))
+  term)
+
 (defun ensure-term (symbol expression)
   (or (gethash symbol (expression-terms expression))
       (setf (gethash symbol (expression-terms expression))
             (make-term symbol))))
 
-(defun delete-term (symbol expression)
-  (remhash symbol (expression-terms expression)))
-
 (defun add-variable (expression symbol value)
   (when symbol
     (let ((term (ensure-term symbol expression)))
       (if (~zerop (incf (term-multiplier term) value))
-          (delete-term symbol expression)
+          (setf (find-term symbol expression) NIL)
           term))))
 
 (defun add-expression (expression to-add multiplier)
@@ -94,7 +97,7 @@
   (let* ((term (find-term entry expression))
          (reciprocal (/ (term-multiplier term))))
     (assert (and (not (eq entry exit)) (not (~zerop (term-multiplier term)))))
-    (delete-term entry expression)
+    (setf (find-term entry expression) NIL)
     (multiply expression (- reciprocal))
     (if exit
         (add-variable expression exit reciprocal)
@@ -103,5 +106,5 @@
 (defun substitute (expression entry to-substitute)
   (let ((term (find-term entry expression)))
     (when term
-      (delete-term entry expression)
+      (setf (find-term entry expression) NIL)
       (add-expression expression to-substitute (term-multiplier term)))))

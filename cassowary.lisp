@@ -32,29 +32,29 @@
   (do-expressions (expression solver)
     (substitute expression variable to-substitute)
     (cond ((external-p (expression-key expression))
-           (mark-dirty solver (find-variable solver (expression-key expression))))
+           (mark-dirty solver (find-variable (expression-key expression) solver)))
           ((< (expression-constant expression) 0f0)
            (mark-infeasible solver expression))))
   (substitute (solver-objective solver) variable to-substitute))
 
 (defun get-expression (solver symbol destination)
-  (let ((expression (find-expression solver symbol)))
+  (let ((expression (find-expression symbol solver)))
     (setf (expression-key destination) NIL)
     (assert (not (null expression))
             () 'assertion-violated)
-    (setf (find-expression solver symbol) NIL)
+    (setf (find-expression symbol solver) NIL)
     (setf (expression-constant destination) (expression-constant expression))
     (setf (expression-terms destination) (expression-terms expression))
     destination))
 
 (defun put-expression (solver symbol source)
-  (let ((expression (ensure-expression solver symbol)))
+  (let ((expression (ensure-expression symbol solver)))
     (setf (expression-constant expression) (expression-constant source))
     (setf (expression-terms expression) (expression-terms source))
     expression))
 
 (defun merge-expression (solver expression variable multiplier)
-  (let ((old-expression (find-expression solver variable)))
+  (let ((old-expression (find-expression variable solver)))
     (if old-expression
         (add-expression expression old-expression multiplier)
         (add-variable expression variable multiplier))))
@@ -99,7 +99,7 @@
   (let ((expression (%make-expression)))
     (setf (expression-constant expression) (expression-constant (constraint-expression constraint)))
     (do-terms (term (constraint-expression constraint))
-      (mark-dirty solver (find-variable solver (term-key term)))
+      (mark-dirty solver (find-variable (term-key term) solver))
       (merge-expression solver expression (term-key term) (term-multiplier term)))
     (macrolet ((initsymbol (place type)
                  `(unless ,place
@@ -140,7 +140,7 @@
   (let ((a (mksym 'slack))
         (tmp (%make-expression)))
     (decf *symbol-ids*)
-    (with-protection (setf (find-expression solver a) NIL)
+    (with-protection (setf (find-expression a solver) NIL)
       (add-expression tmp expression 1f0)
       (put-expression solver a expression)
       ;; KLUDGE: not sure if this is necessary, but it seems to me like it should be.
@@ -167,9 +167,9 @@
           (do-expressions (expression solver)
             (let ((term (find-term a expression)))
               (when term
-                (delete-term (term-key term) expression))))
+                (setf (find-term (term-key term) expression) NIL))))
           (let ((term (find-term a (solver-objective solver))))
-            (when term (delete-term (term-key term) (solver-objective solver)))
+            (when term (setf (find-term (term-key term) (solver-objective solver)) NIL))
             (when state (remove-constraint constraint))
             (ret)))))))
 
@@ -222,10 +222,10 @@
 
 (defun delta-edit-constant (solver delta constraint)
   (let (expression)
-    (cond ((setf expression (find-expression solver (constraint-marker constraint)))
+    (cond ((setf expression (find-expression (constraint-marker constraint) solver))
            (when (< (decf (expression-constant expression) delta) 0f0)
              (mark-infeasible solver expression)))
-          ((setf expression (find-expression solver (constraint-other constraint)))
+          ((setf expression (find-expression (constraint-other constraint) solver))
            (when (< (incf (expression-constant expression) 0f0))
              (mark-infeasible solver expression)))
           (T
@@ -234,7 +234,7 @@
                (when term
                  (incf (expression-constant expression) (* (term-multiplier term) delta))
                  (cond ((external-p (expression-key expression))
-                        (mark-dirty solver (find-variable solver (expression-key expression))))
+                        (mark-dirty solver (find-variable (expression-key expression) solver)))
                        ((< (expression-constant expression) 0f0)
                         (mark-infeasible solver expression))))))))))
 
@@ -289,7 +289,7 @@
 (defun update-variables (solver)
   (loop for variable = (pop (solver-dirty-variables solver))
         while variable
-        do (let ((expression (find-expression solver (variable-symbol variable))))
+        do (let ((expression (find-expression (variable-symbol variable) solver)))
              (setf (variable-dirty-p variable) NIL)
              (setf (variable-value variable) (if expression (expression-constant expression) 0f0))))
   solver)
