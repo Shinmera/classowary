@@ -99,7 +99,7 @@
           (variable-dirty-p variable)))
 
 (defstruct (constraint (:constructor %make-constraint (strength solver)))
-  (expression (%make-expression (mksym 'external 'constraint)) :type expression)
+  (expression (%make-expression (mksym 'external)) :type expression)
   (marker NIL :type symbol)
   (other NIL :type symbol)
   (relation NIL :type symbol)
@@ -127,42 +127,39 @@
     (incf (variable-use-count variable))))
 
 (defun value (variable)
-  (if variable
-      (variable-value variable)
-      0f0))
+  (variable-value variable))
 
-(defun make-variable (solver)
-  (let ((variable (%make-variable (mksym 'external 'variable) solver)))
+(defun make-variable (solver &optional name)
+  (let ((variable (%make-variable (mksym 'external name) solver)))
     (setf (find-variable (variable-symbol variable) solver) variable)))
 
 (defun delete-variable (variable)
-  (when (and variable (<= (decf (variable-use-count variable)) 0))
+  (when (<= (decf (variable-use-count variable)) 0)
     (setf (find-variable (variable-symbol variable) (variable-solver variable)) NIL)
     (when (variable-constraint variable)
-      (remove-constraint (variable-constraint variable)))))
+      (remove-constraint (variable-constraint variable)))
+    T))
 
 (defun make-constraint (solver &key (strength :required))
   (let ((constraint (%make-constraint (->strength strength) solver)))
     (setf (find-constraint (expression-key (constraint-expression constraint)) solver) constraint)))
 
 (defun delete-constraint (constraint)
-  (when constraint
-    (let ((solver (constraint-solver constraint)))
-      (remove-constraint constraint)
-      (setf (find-constraint (expression-key (constraint-expression constraint)) solver) NIL)
-      (do-terms (term (constraint-expression constraint))
-        (delete-variable (find-variable (term-key term) solver))))))
+  (let ((solver (constraint-solver constraint)))
+    (remove-constraint constraint)
+    (setf (find-constraint (expression-key (constraint-expression constraint)) solver) NIL)
+    (do-terms (term (constraint-expression constraint))
+      (delete-variable (find-variable (term-key term) solver)))))
 
 (defun clone-constraint (other &key strength)
-  (when other
-    (let ((constraint (make-constraint
-                       (constraint-solver other)
-                       :strength (if strength
-                                     (->strength strength)
-                                     (constraint-strength other)))))
-      (merge-constraint-into constraint other 1f0)
-      (setf (constraint-relation constraint) (constraint-relation other))
-      constraint)))
+  (let ((constraint (make-constraint
+                     (constraint-solver other)
+                     :strength (if strength
+                                   (->strength strength)
+                                   (constraint-strength other)))))
+    (merge-constraint-into constraint other 1f0)
+    (setf (constraint-relation constraint) (constraint-relation other))
+    constraint))
 
 (defun merge-constraint-into (constraint other multiplier)
   (assert (and (not (null constraint)) (not (null other))
@@ -176,17 +173,15 @@
     (add-variable (constraint-expression constraint) (term-key term) (* (term-multiplier term) multiplier))))
 
 (defun reset-constraint (constraint)
-  (when constraint
-    (remove-constraint constraint)
-    (setf (constraint-relation constraint) NIL)
-    (do-terms (term (constraint-expression constraint))
-      (delete-variable (find-variable (term-key term) (constraint-solver constraint))))
-    (reset-expression (constraint-expression constraint))
-    constraint))
+  (remove-constraint constraint)
+  (setf (constraint-relation constraint) NIL)
+  (do-terms (term (constraint-expression constraint))
+    (delete-variable (find-variable (term-key term) (constraint-solver constraint))))
+  (reset-expression (constraint-expression constraint))
+  constraint)
 
 (defun add-term (constraint variable multiplier)
-  (assert (and (not (null constraint)) (not (null variable))
-               (null (constraint-marker constraint))
+  (assert (and (null (constraint-marker constraint))
                (not (null (variable-symbol variable)))
                (eq (constraint-solver constraint) (variable-solver variable)))
           () 'assertion-violated)
@@ -197,8 +192,7 @@
   constraint)
 
 (defun add-constant (constraint constant)
-  (assert (and (not (null constraint))
-               (null (constraint-marker constraint)))
+  (assert (null (constraint-marker constraint))
           () 'assertion-violated)
   (case (constraint-relation constraint)
     (>= (decf (expression-constant (constraint-expression constraint)) constant))
@@ -210,8 +204,7 @@
 
 (defun (setf relation) (relation constraint)
   (assert (member relation '(<= = >=)))
-  (assert (and (not (null constraint))
-               (null (constraint-marker constraint))
+  (assert (and (null (constraint-marker constraint))
                (null (constraint-relation constraint)))
           () 'assertion-violated)
   (unless (eq relation '>=)

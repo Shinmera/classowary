@@ -81,12 +81,11 @@
       (setf (gethash symbol (expression-terms expression))
             (make-term symbol))))
 
-(defun add-variable (expression symbol value)
-  (when symbol
-    (let ((term (ensure-term symbol expression)))
-      (if (~zerop (incf (term-multiplier term) value))
-          (setf (find-term symbol expression) NIL)
-          term))))
+(defun add-variable (expression symbol multiplier)
+  (let ((term (ensure-term symbol expression)))
+    (if (~zerop (incf (term-multiplier term) multiplier))
+        (setf (find-term symbol expression) NIL)
+        term)))
 
 (defun add-expression (expression to-add multiplier)
   (incf (expression-constant expression) (* (expression-constant to-add) multiplier))

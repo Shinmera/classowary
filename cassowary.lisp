@@ -271,7 +271,8 @@
   (unless (solver-auto-update solver)
     (update-variables solver))
   (do-variables (variable solver)
-    (remove-constraint (variable-constraint variable))
+    (when (variable-constraint variable)
+      (remove-constraint (variable-constraint variable)))
     (setf (variable-constraint variable) NIL))
   (assert (~zerop (expression-constant (solver-objective solver))))
   (assert (null (solver-infeasible-expressions solver)))
@@ -295,8 +296,7 @@
   solver)
 
 (defun add-constraint (constraint)
-  (assert (and (not (null constraint))
-               (null (constraint-marker constraint)))
+  (assert (null (constraint-marker constraint))
           () 'assertion-violated)
   (let* ((solver (constraint-solver constraint))
          (expression (make-expression solver constraint)))
@@ -310,8 +310,7 @@
     constraint))
 
 (defun remove-constraint (constraint)
-  (when (and constraint
-             (constraint-marker constraint))
+  (when (constraint-marker constraint)
     (let ((solver (constraint-solver constraint))
           (marker (constraint-marker constraint))
           (tmp (%make-expression)))
@@ -333,8 +332,6 @@
   (constraint-strength constraint))
 
 (defun (setf strength) (strength constraint)
-  (assert (not (null constraint))
-          () 'assertion-violated)
   (let ((strength (->strength strength)))
     (unless (= strength (constraint-strength constraint))
       (cond ((or (<= +REQUIRED+ (constraint-strength constraint))
@@ -355,9 +352,9 @@
   strength)
 
 (defun add-edit (variable strength)
-  (assert (and (not (null variable)) (null (variable-constraint variable)))
+  (assert (null (variable-constraint variable))
           () 'assertion-violated)
-  (assert (variable-symbol variable))
+  (assert (not (null (variable-symbol variable))))
   (let ((strength (->strength strength)))
     (when (<= +STRONG+ strength) (setf strength +STRONG+))
     (let ((constraint (make-constraint (variable-solver variable) :strength strength)))
@@ -370,14 +367,13 @@
       constraint)))
 
 (defun delete-edit (variable)
-  (when (and variable (variable-constraint variable))
+  (when (variable-constraint variable)
     (delete-constraint (variable-constraint variable))
     (setf (variable-constraint variable) NIL)
     (setf (variable-edit-value variable) 0f0)
     variable))
 
 (defun suggest (variable value)
-  (assert (not (null variable)))
   (unless (variable-constraint variable)
     (add-edit variable +MEDIUM+)
     (assert (not (null (variable-constraint variable)))))

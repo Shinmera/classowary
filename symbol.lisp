@@ -8,19 +8,20 @@
 
 (defvar *symbol-ids* 0)
 
-(defun mksym (type &optional (id 'symbol))
+(defun mksym (type &optional name)
   (assert (or (eq type 'external)
               (eq type 'error)
               (eq type 'slack)
               (eq type 'dummy)))
   (let* ((id (incf *symbol-ids*))
-         (sym (make-symbol (format NIL "~a~a"
-                                   (ecase type
-                                     (external "V")
-                                     (slack "S")
-                                     (error "E")
-                                     (dummy "D"))
-                                   id))))
+         (sym (make-symbol (or name
+                               (format NIL "~a~a"
+                                       (ecase type
+                                         (external "V")
+                                         (slack "S")
+                                         (error "E")
+                                         (dummy "D"))
+                                       id)))))
     (setf (get sym 'type) type)
     (setf (get sym 'id) id)
     sym))
