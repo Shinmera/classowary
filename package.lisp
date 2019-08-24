@@ -38,6 +38,7 @@
    #:make-variable
    #:use-variable
    #:delete-variable
+   #:with-variables
    #:value
    #:make-constraint
    #:clone-constraint
