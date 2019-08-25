@@ -252,20 +252,20 @@
 
 (defmacro with-variables (vars solver &body body)
   (let ((solverg (gensym "SOLVER")))
-    `(let ((,solverg ,solver)
-           ,@(loop for var in vars
-                   collect (destructuring-bind (var &rest args) (if (listp var) var (list var))
-                             (let ((name var) (strength NIL))
-                               (ecase (length args)
-                                 (0)
-                                 (1 (etypecase (first args)
-                                      ((and symbol (not keyword)) (setf name (first args)))
-                                      (T (setf strength (first args)))))
-                                 (2 (setf name (first args))
-                                  (setf strength (second args))))
-                               `(,var (or (find-variable ',name ,solverg)
-                                          (make-variable ,solverg :name ',name
-                                                                  :strength ,strength)))))))
+    `(let* ((,solverg ,solver)
+            ,@(loop for var in vars
+                    collect (destructuring-bind (var &rest args) (if (listp var) var (list var))
+                              (let ((name var) (strength NIL))
+                                (ecase (length args)
+                                  (0)
+                                  (1 (etypecase (first args)
+                                       ((and symbol (not keyword)) (setf name (first args)))
+                                       (T (setf strength (first args)))))
+                                  (2 (setf name (first args))
+                                   (setf strength (second args))))
+                                `(,var (or (find-variable ',name ,solverg)
+                                           (make-variable ,solverg :name ',name
+                                                                   :strength ,strength)))))))
        ,@body)))
 
 (defun reduce-expression (thing)
