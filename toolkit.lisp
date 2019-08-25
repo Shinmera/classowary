@@ -10,10 +10,13 @@
 (defconstant +STRONG+ 1000000f0)
 (defconstant +MEDIUM+ 1000f0)
 (defconstant +WEAK+ 1f0)
+(defconstant +NONE+ 0f0)
 
 (defun ->strength (strength)
   (etypecase strength
-    (real (float strength 0f0))
+    (real
+     (assert (<= 0 strength) (strength) 'assertion-violated)
+     (float strength 0f0))
     ((eql :required) +REQUIRED+)
     ((eql :strong) +STRONG+)
     ((eql :medium) +MEDIUM+)

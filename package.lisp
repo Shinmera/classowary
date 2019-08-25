@@ -8,7 +8,7 @@
   (:use #:cl)
   (:shadow #:substitute #:variable)
   (:export
-   #:cassowary-condition
+   #:classowary-condition
    #:assertion-violated
    #:expression-unsatisfied
    #:solver
@@ -21,6 +21,7 @@
    #:+STRONG+
    #:+MEDIUM+
    #:+WEAK+
+   #:+NONE+
    #:solver
    #:variable
    #:constraint
@@ -40,6 +41,8 @@
    #:make-variable
    #:delete-variable
    #:with-variables
+   #:find-variable
+   #:find-constraint
    #:value
    #:auto-update
    #:make-constraint
@@ -48,7 +51,7 @@
    #:delete-constraint
    #:constrain
    #:add-term
+   #:remove-term
    #:relation
-   #:add-constant
    #:strength
    #:merge-constraint))

@@ -29,8 +29,14 @@
 
 (defun (setf find-variable) (variable symbol solver)
   (if variable
-      (setf (gethash symbol (solver-variables solver)) variable)
-      (remhash symbol (solver-variables solver)))
+      (progn
+        (setf (gethash symbol (solver-variables solver)) variable)
+        (when (get symbol 'name)
+          (setf (gethash (get symbol 'name) (solver-variables solver)) variable)))
+      (let ((variable (gethash symbol (solver-variables solver))))
+        (when variable
+          (remhash (get (variable-symbol variable) 'name) (solver-variables solver))
+          (remhash symbol (solver-variables solver)))))
   variable)
 
 (defmacro do-variables ((variable solver &optional result) &body body)
@@ -61,8 +67,14 @@
 
 (defun (setf find-constraint) (constraint symbol solver)
   (if constraint
-      (setf (gethash symbol (solver-constraints solver)) constraint)
-      (remhash symbol (solver-constraints solver)))
+      (progn
+        (setf (gethash symbol (solver-constraints solver)) constraint)
+        (when (get symbol 'name)
+          (setf (gethash (get symbol 'name) (solver-constraints solver)) constraint)))
+      (let ((constraint (gethash symbol (solver-constraints solver))))
+        (when constraint
+          (remhash (get (expression-key (constraint-expression constraint)) 'name) (solver-constraints solver))
+          (remhash symbol (solver-constraints solver)))))
   constraint)
 
 (defmacro do-constraints ((constraint solver &optional result) &body body)
@@ -87,8 +99,7 @@
   (constraint NIL :type (or null constraint))
   (edit-value 0f0 :type single-float)
   (value 0f0 :type single-float)
-  (solver NIL :type solver)
-  (use-count 1 :type (unsigned-byte 32)))
+  (solver NIL :type solver))
 
 (defmethod print-object ((variable variable) stream)
   (print-unreadable-object (variable stream :type T)
@@ -104,7 +115,10 @@
             (expression-key (constraint-expression (variable-constraint variable))))
           (variable-dirty-p variable)))
 
-(defstruct (constraint (:constructor %make-constraint (strength solver)))
+(defmethod solver ((variable variable))
+  (variable-solver variable))
+
+(defstruct (constraint (:constructor %make-constraint (strength solver &optional expression)))
   (expression (%make-expression (mksym 'external)) :type expression)
   (marker NIL :type symbol)
   (other NIL :type symbol)
@@ -128,6 +142,9 @@
           (constraint-other constraint)
           (constraint-strength constraint)))
 
+(defmethod solver ((constraint constraint))
+  (constraint-solver constraint))
+
 (defun value (variable)
   (variable-value variable))
 
@@ -138,35 +155,23 @@
         (make-suggestable variable (if (eq strength T) :strong strength))
         variable)))
 
-(defun use-variable (variable)
-  (when variable
-    (incf (variable-use-count variable))))
-
-(defun unuse-variable (variable)
-  (when (<= (decf (variable-use-count variable)) 0)
-    (setf (find-variable (variable-symbol variable) (variable-solver variable)) NIL)
-    (when (variable-constraint variable)
-      (remove-constraint (variable-constraint variable)))
-    T))
-
 (defun delete-variable (variable)
   (setf (find-variable (variable-symbol variable) (variable-solver variable)) NIL)
   (when (variable-constraint variable)
     (remove-constraint (variable-constraint variable)))
-  (do-expressions (expression (variable-solver variable))
+  (do-expressions (expression (variable-solver variable) T)
     (setf (find-term (variable-symbol variable) expression) NIL)))
 
-(defun make-constraint (solver &key (strength :required))
-  (let ((constraint (%make-constraint (->strength strength) solver)))
+(defun make-constraint (solver &key name (strength :required))
+  (let ((constraint (%make-constraint (->strength strength) solver
+                                      (%make-expression (mksym 'external name)))))
     (setf (find-constraint (expression-key (constraint-expression constraint)) solver) constraint)))
 
-;; FIXME: rethink what this means compared to REMOVE-CONSTRAINT
 (defun delete-constraint (constraint)
-  (let ((solver (constraint-solver constraint)))
-    (remove-constraint constraint)
-    (setf (find-constraint (expression-key (constraint-expression constraint)) solver) NIL)
-    (do-terms (term (constraint-expression constraint))
-      (unuse-variable (find-variable (term-key term) solver)))))
+  (remove-constraint constraint)
+  (setf (find-constraint (expression-key (constraint-expression constraint))
+                         (constraint-solver constraint))
+        NIL))
 
 (defun clone-constraint (other &key strength)
   (let ((constraint (make-constraint
@@ -186,18 +191,35 @@
   (when (eq '>= (constraint-relation constraint))
     (setf multiplier (- multiplier)))
   (do-terms (term (constraint-expression other) constraint)
-    (use-variable (find-variable (term-key term) (constraint-solver constraint)))
     (add-variable (constraint-expression constraint) (term-key term) (* (term-multiplier term) multiplier))))
 
 (defun reset-constraint (constraint)
   (remove-constraint constraint)
   (setf (constraint-relation constraint) NIL)
-  (do-terms (term (constraint-expression constraint))
-    (unuse-variable (find-variable (term-key term) (constraint-solver constraint))))
   (reset-expression (constraint-expression constraint))
   constraint)
 
-(defun add-term (constraint variable multiplier)
+(defun remove-term (constraint multiplier &optional (variable NIL v-p))
+  (if v-p
+      (add-variable-term constraint variable (- multiplier))
+      (add-constant constraint (- multiplier))))
+
+(define-compiler-macro remove-term (constraint multiplier &optional variable)
+  (if variable
+      `(add-variable-term ,constraint ,variable (- ,multiplier))
+      `(add-constant ,constraint (- ,multiplier))))
+
+(defun add-term (constraint multiplier &optional (variable NIL v-p))
+  (if v-p
+      (add-variable-term constraint variable multiplier)
+      (add-constant constraint multiplier)))
+
+(define-compiler-macro add-term (constraint multiplier &optional variable)
+  (if variable
+      `(add-variable-term ,constraint ,variable ,multiplier)
+      `(add-constant ,constraint ,multiplier)))
+
+(defun add-variable-term (constraint variable multiplier)
   (assert (and (null (constraint-marker constraint))
                (not (null (variable-symbol variable)))
                (eq (constraint-solver constraint) (variable-solver variable)))
@@ -205,7 +227,6 @@
   (when (eq '>= (constraint-relation constraint))
     (setf multiplier (- multiplier)))
   (add-variable (constraint-expression constraint) (variable-symbol variable) multiplier)
-  (use-variable variable)
   constraint)
 
 (defun add-constant (constraint constant)
@@ -233,51 +254,79 @@
   (let ((solverg (gensym "SOLVER")))
     `(let ((,solverg ,solver)
            ,@(loop for var in vars
-                   collect (destructuring-bind (var &optional strength) (if (listp var) var (list var))
-                             `(,var (make-variable ,solverg :name ,(string var)
-                                                            :strength ,strength)))))
+                   collect (destructuring-bind (var &rest args) (if (listp var) var (list var))
+                             (let ((name var) (strength NIL))
+                               (ecase (length args)
+                                 (0)
+                                 (1 (etypecase (first args)
+                                      ((and symbol (not keyword)) (setf name (first args)))
+                                      (T (setf strength (first args)))))
+                                 (2 (setf name (first args))
+                                  (setf strength (second args))))
+                               `(,var (or (find-variable ',name ,solverg)
+                                          (make-variable ,solverg :name ',name
+                                                                  :strength ,strength)))))))
        ,@body)))
 
-(defun extract-terms (thing mult)
+(defun reduce-expression (thing)
   (etypecase thing
     (real
-     (list (* mult thing)))
+     (list (float thing 0f0)))
     (symbol
-     (list (list thing mult)))
+     (list 0f0 (list thing 1f0)))
     (cons
      (destructuring-bind (op . args) thing
        (ecase op
-         (* (destructuring-bind (a b) args
-              (cond ((and (realp a) (realp b))
-                     (extract-terms (* a b) mult))
-                    ((realp a)
-                     (extract-terms b (* a mult)))
-                    (T
-                     (extract-terms a (* b mult))))))
-         (/ (destructuring-bind (a b) args
-              (cond ((and (realp a) (realp b))
-                     (extract-terms (/ a b) mult))
-                    ((realp a)
-                     (error "Cannot simulate the constraint ~a" thing))
-                    (T
-                     (extract-terms a (* b mult))))))
-         (+ (loop for term in args
-                  append (extract-terms term (* +1 mult))))
-         (- (loop for term in args
-                  append (extract-terms term (* -1 mult)))))))))
+         (quote (list 0f0 (list thing 1f0)))
+         (* (let ((vars NIL) (const 1f0))
+              (dolist (arg args)
+                (destructuring-bind (inner . terms) (reduce-expression arg)
+                  (if terms
+                      (if vars
+                          (error "This is not a linear expression.~%  ~a" thing)
+                          (setf vars (cons inner terms)))
+                      (setf const (* const inner)))))
+              (list* (* const (or (car vars) 1f0))
+                     (loop for (var mult) in (rest vars)
+                           collect (list var (* mult const))))))
+         (/ (destructuring-bind (a &rest rest) args
+              (destructuring-bind (aconst . avars) (reduce-expression a)
+                (destructuring-bind (const . vars) (reduce-expression (list* '+ rest))
+                  (when vars
+                    (error "This is not a linear expression.~%  ~a" thing))
+                  (append (list (/ aconst const))
+                          (loop for (var mult) in avars
+                                collect (list var (/ mult const))))))))
+         (+ (let ((vars ()) (const 0f0))
+              (dolist (arg args)
+                (destructuring-bind (inner . terms) (reduce-expression arg)
+                  (incf const inner)
+                  (setf vars (append vars terms))))
+              (list* const vars)))
+         (- (destructuring-bind (a &rest rest) args
+              (destructuring-bind (aconst . avars) (reduce-expression a)
+                (destructuring-bind (const . vars) (reduce-expression (list* '+ rest))
+                  (append (list (- aconst const))
+                          avars
+                          (loop for (var mult) in vars
+                                collect (list var (- mult)))))))))))))
 
-(defmacro constrain (solver constraint &rest args &key strength)
-  (declare (ignore strength))
+(defmacro constrain (solver constraint &rest args &key name strength)
+  (declare (ignore name strength))
   (destructuring-bind (relation lhs rhs) constraint
-    (let ((constraint (gensym "CONSTRAINT")))
-      (flet ((expand-terms (terms)
-               (loop for thing in (extract-terms terms 1)
-                     collect (etypecase thing
-                               (real `(add-constant ,constraint ,thing))
-                               (symbol `(add-term ,constraint ,thing 1f0))
-                               (cons (destructuring-bind (var mult) thing
-                                       `(add-term ,constraint ,var ,mult)))))))
-        `(let ((,constraint (make-constraint ,solver ,@args)))
+    (let ((solverg (gensym "SOLVERG"))
+          (constraint (gensym "CONSTRAINT")))
+      (labels ((expand-terms (terms)
+                 (destructuring-bind (const . terms) (reduce-expression terms)
+                   (list* `(add-constant ,constraint ,const)
+                          (loop for (var mult) in terms
+                                for variable = (if (consp var)
+                                                   `(or (find-variable ,(second var) ,solverg)
+                                                        (make-variable ,solverg :name ',(second var)))
+                                                   var)
+                                collect `(add-variable-term ,constraint ,variable ,mult))))))
+        `(let* ((,solverg ,solver)
+                (,constraint (make-constraint ,solverg ,@args)))
            ,@(expand-terms lhs)
            (setf (relation ,constraint) ',relation)
            ,@(expand-terms rhs)
