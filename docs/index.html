@@ -1,0 +1,483 @@
+<!DOCTYPE html> <html lang="EN"> <head> <meta charset="utf-8"> <title>Classowary</title> <style>html body{margin:0 auto 0 auto;padding:20px;max-width:1024px;font-family:sans-serif;font-size:14pt;overflow-y:scroll;}html body a{text-decoration:none;}html body a[href]{color:#0055AA;}html body a[href]:hover{color:#0088EE;}html body pre{background:#FAFAFA;border:1px solid #DDDDDD;padding:0.75em;overflow-x:auto;}html body pre >code a[href]{color:#223388;}article.project h1,article.project h2,article.project h3,article.project h4,article.project h5,article.project h6{margin:0.2em 0 0.1em 0;text-indent:1em;}article.project >header{text-align:center;}article.project >header img.logo{display:block;margin:auto;max-height:170px;}article.project >header h1{display:inline-block;text-indent:0;font-size:2.5em;}article.project >header .version{vertical-align:bottom;}article.project >header .languages{margin-top:-0.5em;text-transform:capitalize;}article.project >header .description{margin:0;}article.project >header .pages{margin-top:0.5em;font-size:1.2em;text-transform:capitalize;}article.project >header .pages a{display:inline-block;padding:0 0.2em;}article.project >section{margin:1em 0 1em 0;}article.project #index >ul{list-style:none;margin:0;padding:0;}article.project .row label{display:inline-block;min-width:6em;}article.project #system .row{display:flex;}article.project #system #dependencies{display:inline;margin:0;padding:0;}article.project #system #dependencies li{display:inline;padding:0 0.2em;}article.definition{margin:1em 0 0 0;}article.definition >header h1,article.definition >header h2,article.definition >header h3,article.definition >header h4,article.definition >header h5,article.definition >header h6{text-indent:0;display:inline-block;}article.definition >header ul{display:inline-block;list-style:none;margin:0;padding:0;}article.definition >header ul li{display:inline-block;padding:0 0.2em 0 0;}article.definition >header .visibility{display:none;}article.definition >header .visibility,article.definition >header .type{text-transform:lowercase;}article.definition >header .source-link{visibility:hidden;float:right;}article.definition >header .source-link:after{visibility:visible;content:"[SRC]";}article.definition .docstring{margin:0 0 0 1em;}article.definition .docstring pre{font-size:0.8em;white-space:pre-wrap;}.definition.package >header ul.nicknames{display:inline-block;list-style:none;margin:0;padding:0 0 0 1em;}.definition.package >header ul.nicknames li{display:inline;}.definition.package >header ul.nicknames:before{content:"(";}.definition.package >header ul.nicknames:after{content:")";}.definition.package ul.definitions{margin:0;list-style:none;padding:0 0 0 0.5em;}.definition.callable >header .name:before,.definition.type >header .name:before{content:"(";font-weight:normal;}.definition.callable >header .arguments:after,.definition.type >header .arguments:after{content:")";}.definition.callable >header .arguments .arguments:before,.definition.type >header .arguments .arguments:before{content:"(";}.definition.callable >header .arguments .argument,.definition.type >header .arguments .argument{padding:0;}.definition.callable >header .arguments .argument.lambda-list-keyword,.definition.type >header .arguments .argument.lambda-list-keyword{color:#991155;}.definition li>mark{background:none;border-left:0.3em solid #0088EE;padding-left:0.3em;display:block;}</style> </head> <body> <article class="project"> <header>  <h1>classowary</h1>  <span class="version">1.0.0</span>  <nav class="languages">  </nav>  <p class="description">An implementation of the Cassowary linear constraint solver toolkit</p>  <nav class="pages">  </nav> </header> <section id="documentation"><article><h2 id="About Classowary">About Classowary</h2><p>Classowary is an implementation of the linear constraint solver toolkit <a class="external-link" href="https://overconstrained.io">Cassowary</a>. It is a variant of the simplex solver algorithm, specifically designed to allow adding, removing, and updating constraints quickly. This makes it a good candidate for layout computations.</p><h2 id="How To">How To</h2><p>After loading Classowary you will likely want to create a local nickname in your package for <code>org.shirakumo.classowary</code>. We will assume that this nickname is called <code>cass</code> for this tutorial.</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(<a href="http://l1sp.org/cl/defvar" class="xref">defvar</a> *solver* (<a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AMAKE-SOLVER" class="xref">cass:make-solver</a>))
+
+(<a href="#MACRO-FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AWITH-VARIABLES" class="xref">cass:with-variables</a> (a b c) *solver*
+  (<a href="#MACRO-FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ACONSTRAIN" class="xref">cass:constrain</a> *solver* (&lt;= 0 a))
+  (<a href="#MACRO-FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ACONSTRAIN" class="xref">cass:constrain</a> *solver* (&lt;= a 10))
+  (<a href="#MACRO-FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ACONSTRAIN" class="xref">cass:constrain</a> *solver* (= b (* (+ 1 a) 5)))
+  (<a href="#MACRO-FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ACONSTRAIN" class="xref">cass:constrain</a> *solver* (= (+ 3 (* 2 c)) (+ a b)))
+  (<a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AUPDATE-VARIABLES" class="xref">cass:update-variables</a> *solver*)
+  (<a href="http://l1sp.org/cl/values" class="xref">values</a> (<a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AVALUE" class="xref">cass:value</a> a) (<a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AVALUE" class="xref">cass:value</a> b) (<a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AVALUE" class="xref">cass:value</a> c)))
+;; =&gt; 0 5 1</pre></code><p>As you can see, the solver picked only one of many possible solutions. When the system is underconstrained, it isn't predictable which solution you will get, but it should always fulfil all constraints that were given. If the system is overconstrained, Cassowary will try to match them as closely as possible according to each constraint's strength.</p><p>Cassowary also allows you to &quot;suggest&quot; a value for a variable. This means that the solver will try to keep the variable to this value if possible.</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(<a href="#MACRO-FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AWITH-VARIABLES" class="xref">cass:with-variables</a> (a b c) *solver*
+  (<a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AMAKE-SUGGESTABLE" class="xref">cass:make-suggestable</a> a)
+  (<a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ASUGGEST" class="xref">cass:suggest</a> a 5)
+  (<a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AUPDATE-VARIABLES" class="xref">cass:update-variables</a> *solver*)
+  (<a href="http://l1sp.org/cl/values" class="xref">values</a> (<a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AVALUE" class="xref">cass:value</a> a) (<a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AVALUE" class="xref">cass:value</a> b) (<a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AVALUE" class="xref">cass:value</a> c)))
+;; =&gt; 5 30 16</pre></code><p>This is typically how you will want to impose additional constraints imposed by the user such as when they explicitly move or resize something.</p><p>Naturally you can impose additional constraints at a later point as well.</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(<a href="#MACRO-FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AWITH-VARIABLES" class="xref">cass:with-variables</a> (a b c) *solver*
+  (<a href="#MACRO-FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ACONSTRAIN" class="xref">cass:constrain</a> *solver* (&lt;= a (/ c 4)) :name 'a)
+  (<a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AUPDATE-VARIABLES" class="xref">cass:update-variables</a> *solver*)
+  (<a href="http://l1sp.org/cl/values" class="xref">values</a> (<a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AVALUE" class="xref">cass:value</a> a) (<a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AVALUE" class="xref">cass:value</a> b) (<a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AVALUE" class="xref">cass:value</a> c)))
+;; =&gt; 1 10 4</pre></code><p>As you can see, with this additional constraint the solver was no longer able to fulfil our suggested value exactly. We can easily remove the offending constraint again.</p><code style="display:block" class="code-block" data-language="common lisp"><pre>(<a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ADELETE-CONSTRAINT" class="xref">cass:delete-constraint</a> (<a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AFIND-CONSTRAINT" class="xref">cass:find-constraint</a> 'a *solver*))</pre></code><p>Instead of using the <code><a href="#MACRO-FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ACONSTRAIN" class="xref">constrain</a></code> and <code><a href="#MACRO-FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AWITH-VARIABLES" class="xref">with-variables</a></code> macros, you can also dynamically build the variables and constraints through <code><a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AMAKE-VARIABLE" class="xref">make-variable</a></code>, <code><a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AMAKE-CONSTRAINT" class="xref">make-constraint</a></code>, <code><a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AADD-TERM" class="xref">add-term</a></code>, <code><a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ARELATION" class="xref">relation</a></code>, and <code><a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AADD-CONSTRAINT" class="xref">add-constraint</a></code>. When building constraints and variables, you should make sure to pass the <code>:name</code> argument so that you can retrieve them from the solver later, or keep references of your own somewhere.</p><p>Should a solver or constraint get into a bad state, you can attempt to clear their state out with <code><a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ARESET-SOLVER" class="xref">reset-solver</a></code> and <code><a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ARESET-CONSTRAINT" class="xref">reset-constraint</a></code> respectively.</p><h2 id="Further Reading">Further Reading</h2><p>The Cassowary algorithm is described in the paper &quot;The Cassowary Linear Arithmetic Constraint Solving Algorithm: Interface and Implementation&quot; by Badros and Borning<sup class="footnote-reference"><a href="#footnote-1">[1]</a></sup>. You can find the website of the original implementation <a class="external-link" href="https://constraints.cs.washington.edu/cassowary/">here</a>.</p><p>This implementation is largely based on the <a class="external-link" href="https://github.com/starwing/amoeba">Amoeba implementation</a> by Xavier Wang.</p><footer class="footnotes"><hr></hr><ol><li value="1" id="footnote-1"> <a href="https://constraints.cs.washington.edu/cassowary/cassowary-tr.pdf">https://constraints.cs.washington.edu/cassowary/cassowary-tr.pdf</a></li></ol></footer></article></section>   <section id="system"> <h2>System Information</h2>  <div class="row"> <label for="version">Version:</label> <a id="version">1.0.0</a> </div>   <div class="row"> <label for="dependencies">Dependencies:</label> <ul id="dependencies"><li><a class="external" href="https://Shinmera.github.io/documentation-utils/">documentation-utils</a></li></ul> </div>   <div class="row"> <label for="author">Author:</label> <a id="author" href="mailto:shinmera@tymoon.eu">Nicolas Hafner</a> </div>   <div class="row"> <label for="license">License:</label> <a id="license" href="https://github.com/Shinmera/classowary/blob/master/LICENSE">zlib</a> </div>   <div class="row"> <label for="homepage">Homepage:</label> <a id="homepage" href="https://github.com/Shinmera/classowary">https://github.com/Shinmera/classowary</a> </div>  </section>   <section id="index"> <h2>Definition Index</h2> <ul> <li> <article class="definition package" id="PACKAGE ORG.SHIRAKUMO.CLASSOWARY"> <header> <h3> <a href="#PACKAGE%20ORG.SHIRAKUMO.CLASSOWARY">ORG.SHIRAKUMO.CLASSOWARY</a> </h3> <ul class="nicknames"></ul>  </header> <div class="docstring"><i>No documentation provided.</i></div> <ul class="definitions"> <li> <article class="definition constant" id="VARIABLE ORG.SHIRAKUMO.CLASSOWARY:+MEDIUM+"> <header> <span class="visibility">EXTERNAL</span> <span class="type">CONSTANT</span> <h4 class="name"> <a href="#VARIABLE%20ORG.SHIRAKUMO.CLASSOWARY%3A%2BMEDIUM%2B">+MEDIUM+</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments"></ul>  <a class="source-link" href="https://github.com/Shinmera/classowary/blob/master/toolkit.lisp#L11">Source</a>  </header> <div class="docstring"><pre>Constant for constraints with a medium weight.
+
+Corresponds to 1e3. You can also specify the keyword :medium instead
+of this constant wherever strengths are accepted.</pre></div> </article> </li>  <li> <article class="definition constant" id="VARIABLE ORG.SHIRAKUMO.CLASSOWARY:+NONE+"> <header> <span class="visibility">EXTERNAL</span> <span class="type">CONSTANT</span> <h4 class="name"> <a href="#VARIABLE%20ORG.SHIRAKUMO.CLASSOWARY%3A%2BNONE%2B">+NONE+</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments"></ul>  <a class="source-link" href="https://github.com/Shinmera/classowary/blob/master/toolkit.lisp#L13">Source</a>  </header> <div class="docstring"><pre>Constant for constraints with no weight.
+
+Corresponds to 0e0. You can also specify the keyword :none instead
+of this constant wherever strengths are accepted.</pre></div> </article> </li>  <li> <article class="definition constant" id="VARIABLE ORG.SHIRAKUMO.CLASSOWARY:+REQUIRED+"> <header> <span class="visibility">EXTERNAL</span> <span class="type">CONSTANT</span> <h4 class="name"> <a href="#VARIABLE%20ORG.SHIRAKUMO.CLASSOWARY%3A%2BREQUIRED%2B">+REQUIRED+</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments"></ul>  <a class="source-link" href="https://github.com/Shinmera/classowary/blob/master/toolkit.lisp#L9">Source</a>  </header> <div class="docstring"><pre>Constant for constraints with a very high weight.
+
+Corresponds to 1e9. You can also specify the keyword :required instead
+of this constant wherever strengths are accepted.</pre></div> </article> </li>  <li> <article class="definition constant" id="VARIABLE ORG.SHIRAKUMO.CLASSOWARY:+STRONG+"> <header> <span class="visibility">EXTERNAL</span> <span class="type">CONSTANT</span> <h4 class="name"> <a href="#VARIABLE%20ORG.SHIRAKUMO.CLASSOWARY%3A%2BSTRONG%2B">+STRONG+</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments"></ul>  <a class="source-link" href="https://github.com/Shinmera/classowary/blob/master/toolkit.lisp#L10">Source</a>  </header> <div class="docstring"><pre>Constant for constraints with a high weight.
+
+Corresponds to 1e6. You can also specify the keyword :strong instead
+of this constant wherever strengths are accepted.</pre></div> </article> </li>  <li> <article class="definition constant" id="VARIABLE ORG.SHIRAKUMO.CLASSOWARY:+WEAK+"> <header> <span class="visibility">EXTERNAL</span> <span class="type">CONSTANT</span> <h4 class="name"> <a href="#VARIABLE%20ORG.SHIRAKUMO.CLASSOWARY%3A%2BWEAK%2B">+WEAK+</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments"></ul>  <a class="source-link" href="https://github.com/Shinmera/classowary/blob/master/toolkit.lisp#L12">Source</a>  </header> <div class="docstring"><pre>Constant for constraints with a weak weight.
+
+Corresponds to 1e0. You can also specify the keyword :weak instead
+of this constant wherever strengths are accepted.</pre></div> </article> </li>  <li> <article class="definition structure" id="STRUCTURE ORG.SHIRAKUMO.CLASSOWARY:CONSTRAINT"> <header> <span class="visibility">EXTERNAL</span> <span class="type">STRUCTURE</span> <h4 class="name"> <a href="#STRUCTURE%20ORG.SHIRAKUMO.CLASSOWARY%3ACONSTRAINT">CONSTRAINT</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments"></ul>  <a class="source-link" href="https://github.com/Shinmera/classowary/blob/master/constraint.lisp#L121">Source</a>  </header> <div class="docstring"><pre>Represents a constraint in a linear system.
+
+Each of the constraints in a system must appear in the following
+normalised, mathematical form:
+
+  CONSTRAINT ::= TERM RELATION TERM (\+ TERM)*
+  RELATION   ::= &lt;= | = | &gt;=
+  TERM       ::= number (\* variable)?
+  number     --- a SINGLE-FLOAT
+  variable   --- a VARIABLE
+
+For instance, the following are valid constraints:
+
+  0 = 0
+  1 = 2
+  1*x &lt;= 1
+  2*x &gt;= 3 + 4*y
+  
+And the following are not valid constraints:
+
+  1*x + 1*y = 3*y + 5*z
+  x*x = 2
+
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AMAKE-CONSTRAINT" class="xref">MAKE-CONSTRAINT</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ACLONE-CONSTRAINT" class="xref">CLONE-CONSTRAINT</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ADELETE-CONSTRAINT" class="xref">DELETE-CONSTRAINT</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AFIND-CONSTRAINT" class="xref">FIND-CONSTRAINT</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AADD-CONSTRAINT" class="xref">ADD-CONSTRAINT</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AREMOVE-CONSTRAINT" class="xref">REMOVE-CONSTRAINT</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AADD-TERM" class="xref">ADD-TERM</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AADD-CONSTANT" class="xref">ADD-CONSTANT</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ARELATION" class="xref">RELATION</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ASOLVER" class="xref">SOLVER (function)</a>
+See <a href="#MACRO-FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ACONSTRAIN" class="xref">CONSTRAIN</a></pre></div> </article> </li>  <li> <article class="definition structure" id="STRUCTURE ORG.SHIRAKUMO.CLASSOWARY:EXPRESSION"> <header> <span class="visibility">EXTERNAL</span> <span class="type">STRUCTURE</span> <h4 class="name"> <a href="#STRUCTURE%20ORG.SHIRAKUMO.CLASSOWARY%3AEXPRESSION">EXPRESSION</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments"></ul>  <a class="source-link" href="https://github.com/Shinmera/classowary/blob/master/expression.lisp#L23">Source</a>  </header> <div class="docstring"><pre>The representation of a linear expression.
+
+A linear expression represents a constant factor added together with a
+series of linear variable terms.
+
+See <a href="#STRUCTURE%20ORG.SHIRAKUMO.CLASSOWARY%3ATERM" class="xref">TERM</a></pre></div> </article> </li>  <li> <article class="definition structure" id="STRUCTURE ORG.SHIRAKUMO.CLASSOWARY:SOLVER"> <header> <span class="visibility">EXTERNAL</span> <span class="type">STRUCTURE</span> <h4 class="name"> <a href="#STRUCTURE%20ORG.SHIRAKUMO.CLASSOWARY%3ASOLVER">SOLVER</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments"></ul>  <a class="source-link" href="https://github.com/Shinmera/classowary/blob/master/constraint.lisp#L9">Source</a>  </header> <div class="docstring"><pre>Represents a linear constraint system.
+
+A linear constraint system is composed out of several constraints that
+describe an equality or inequality composed out of linear terms.
+The solver can then attempt to find a solution that fits the variables
+in the terms to the constraints as well as possible.
+
+Note that the solver will bend constraints if there is no solution
+that does not violate any of them.
+
+See <a href="#STRUCTURE%20ORG.SHIRAKUMO.CLASSOWARY%3ACONSTRAINT" class="xref">CONSTRAINT (type)</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AMAKE-SOLVER" class="xref">MAKE-SOLVER</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ARESET-SOLVER" class="xref">RESET-SOLVER</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AAUTO-UPDATE" class="xref">AUTO-UPDATE</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AMAKE-CONSTRAINT" class="xref">MAKE-CONSTRAINT</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AMAKE-VARIABLE" class="xref">MAKE-VARIABLE</a>
+See <a href="#MACRO-FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ACONSTRAIN" class="xref">CONSTRAIN</a>
+See <a href="#MACRO-FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AWITH-VARIABLES" class="xref">WITH-VARIABLES</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AFIND-VARIABLE" class="xref">FIND-VARIABLE</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AFIND-CONSTRAINT" class="xref">FIND-CONSTRAINT</a></pre></div> </article> </li>  <li> <article class="definition structure" id="STRUCTURE ORG.SHIRAKUMO.CLASSOWARY:TERM"> <header> <span class="visibility">EXTERNAL</span> <span class="type">STRUCTURE</span> <h4 class="name"> <a href="#STRUCTURE%20ORG.SHIRAKUMO.CLASSOWARY%3ATERM">TERM</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments"></ul>  <a class="source-link" href="https://github.com/Shinmera/classowary/blob/master/expression.lisp#L9">Source</a>  </header> <div class="docstring"><pre>The representation of a variable term.
+
+A term is a variable and a linear multiplication factor.</pre></div> </article> </li>  <li> <article class="definition structure" id="STRUCTURE ORG.SHIRAKUMO.CLASSOWARY:VARIABLE"> <header> <span class="visibility">EXTERNAL</span> <span class="type">STRUCTURE</span> <h4 class="name"> <a href="#STRUCTURE%20ORG.SHIRAKUMO.CLASSOWARY%3AVARIABLE">VARIABLE</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments"></ul>  <a class="source-link" href="https://github.com/Shinmera/classowary/blob/master/constraint.lisp#L96">Source</a>  </header> <div class="docstring"><pre>Represents a variable in a linear system.
+
+A variable can appear in an arbitrary number of constraints to express
+linear terms. A variable has a value and two states: suggestable, or
+unsuggestable. In the default, unsuggestable state, the variable is
+freely controlled by the linear system and its value is directly
+deduced from the constraints. In the suggestable state, the variable
+has a suggested value that the user supplies, which the solver should
+attempt to keep constant as the system is solved.
+
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AMAKE-VARIABLE" class="xref">MAKE-VARIABLE</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ADELETE-VARIABLE" class="xref">DELETE-VARIABLE</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AFIND-VARIABLE" class="xref">FIND-VARIABLE</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AADD-TERM" class="xref">ADD-TERM</a>
+See <a href="#MACRO-FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AWITH-VARIABLES" class="xref">WITH-VARIABLES</a>
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ASOLVER" class="xref">SOLVER (function)</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AMAKE-SUGGESTABLE" class="xref">MAKE-SUGGESTABLE</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AMAKE-UNSUGGESTABLE" class="xref">MAKE-UNSUGGESTABLE</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ASUGGESTABLE-P" class="xref">SUGGESTABLE-P</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ASUGGEST" class="xref">SUGGEST</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AVALUE" class="xref">VALUE</a></pre></div> </article> </li>  <li> <article class="definition function callable" id="FUNCTION ORG.SHIRAKUMO.CLASSOWARY:ADD-CONSTRAINT"> <header> <span class="visibility">EXTERNAL</span> <span class="type">FUNCTION</span> <h4 class="name"> <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AADD-CONSTRAINT">ADD-CONSTRAINT</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">CONSTRAINT</li>  </ul>  <a class="source-link" href="https://github.com/Shinmera/classowary/blob/master/cassowary.lisp#L298">Source</a>  </header> <div class="docstring"><pre>Adds the constraint to its solver.
+
+Without this, the constraint will not apply.
+
+If the solver is AUTO-UPDATE, the variables will be updated after this
+operation.
+
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ASOLVER" class="xref">SOLVER</a>
+See <a href="#STRUCTURE%20ORG.SHIRAKUMO.CLASSOWARY%3ACONSTRAINT" class="xref">CONSTRAINT (type)</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AREMOVE-CONSTRAINT" class="xref">REMOVE-CONSTRAINT</a></pre></div> </article> </li>  <li> <article class="definition function callable" id="FUNCTION ORG.SHIRAKUMO.CLASSOWARY:ADD-TERM"> <header> <span class="visibility">EXTERNAL</span> <span class="type">FUNCTION</span> <h4 class="name"> <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AADD-TERM">ADD-TERM</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">CONSTRAINT</li>    <li class="argument">MULTIPLIER</li>    <li class="argument lambda-list-keyword">&amp;OPTIONAL</li>    <li class="argument">VARIABLE</li>  </ul>  <a class="source-link" href="https://github.com/Shinmera/classowary/blob/master/constraint.lisp#L212">Source</a>  </header> <div class="docstring"><pre>Adds the given term description to the constraint.
+
+This corresponds to a term of either
+  number
+or
+  number*variable
+being added to the constraint depending on whether the variable is
+given.
+
+Note that adding or removing terms can automatically cancel out as
+soon as either the constant term of the expression reaches zero, or
+the multiplier of a variable term reaches zero. In the latter case,
+the variable term is automatically removed from the expression.
+
+Returns the updated constraint.
+
+See <a href="#STRUCTURE%20ORG.SHIRAKUMO.CLASSOWARY%3ACONSTRAINT" class="xref">CONSTRAINT (type)</a>
+See <a href="#STRUCTURE%20ORG.SHIRAKUMO.CLASSOWARY%3AVARIABLE" class="xref">VARIABLE (type)</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AREMOVE-TERM" class="xref">REMOVE-TERM</a></pre></div> </article> </li>  <li> <article class="definition function callable" id="FUNCTION ORG.SHIRAKUMO.CLASSOWARY:AUTO-UPDATE"> <header> <span class="visibility">EXTERNAL</span> <span class="type">FUNCTION</span> <h4 class="name"> <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AAUTO-UPDATE">AUTO-UPDATE</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">SOLVER</li>  </ul>  <a class="source-link" href="https://github.com/Shinmera/classowary/blob/master/constraint.lisp#L21">Source</a>  </header> <div class="docstring"><pre>Accessor to whether the solver automatically updates variables on changes.
+
+See <a href="#STRUCTURE%20ORG.SHIRAKUMO.CLASSOWARY%3ASOLVER" class="xref">SOLVER (type)</a></pre></div> </article> </li>  <li> <article class="definition function callable" id="FUNCTION ORG.SHIRAKUMO.CLASSOWARY:(SETF AUTO-UPDATE)"> <header> <span class="visibility">EXTERNAL</span> <span class="type">FUNCTION</span> <h4 class="name"> <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3A%28SETF%20AUTO-UPDATE%29">(SETF AUTO-UPDATE)</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">VALUE</li>    <li class="argument">SOLVER</li>  </ul>  <a class="source-link" href="https://github.com/Shinmera/classowary/blob/master/constraint.lisp#L24">Source</a>  </header> <div class="docstring"><i>No documentation provided.</i></div> </article> </li>  <li> <article class="definition function callable" id="FUNCTION ORG.SHIRAKUMO.CLASSOWARY:CLONE-CONSTRAINT"> <header> <span class="visibility">EXTERNAL</span> <span class="type">FUNCTION</span> <h4 class="name"> <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ACLONE-CONSTRAINT">CLONE-CONSTRAINT</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">OTHER</li>    <li class="argument lambda-list-keyword">&amp;KEY</li>    <li class="argument">STRENGTH</li>  </ul>  <a class="source-link" href="https://github.com/Shinmera/classowary/blob/master/constraint.lisp#L176">Source</a>  </header> <div class="docstring"><pre>Return a copy of the given constraint.
+
+This will copy the constraint including its terms into a fresh
+instance.
+
+See <a href="#STRUCTURE%20ORG.SHIRAKUMO.CLASSOWARY%3ACONSTRAINT" class="xref">CONSTRAINT (type)</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AMAKE-CONSTRAINT" class="xref">MAKE-CONSTRAINT</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ADELETE-CONSTRAINT" class="xref">DELETE-CONSTRAINT</a></pre></div> </article> </li>  <li> <article class="definition function callable" id="FUNCTION ORG.SHIRAKUMO.CLASSOWARY:CONSTRAINED-P"> <header> <span class="visibility">EXTERNAL</span> <span class="type">FUNCTION</span> <h4 class="name"> <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ACONSTRAINED-P">CONSTRAINED-P</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">CONSTRAINT</li>  </ul>  <a class="source-link" href="https://github.com/Shinmera/classowary/blob/master/cassowary.lisp#L16">Source</a>  </header> <div class="docstring"><pre>Returns true if the constraint is additionally constrained through a variable.
+
+See <a href="#STRUCTURE%20ORG.SHIRAKUMO.CLASSOWARY%3ACONSTRAINT" class="xref">CONSTRAINT (TYPE)</a></pre></div> </article> </li>  <li> <article class="definition function callable" id="FUNCTION ORG.SHIRAKUMO.CLASSOWARY:DELETE-CONSTRAINT"> <header> <span class="visibility">EXTERNAL</span> <span class="type">FUNCTION</span> <h4 class="name"> <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ADELETE-CONSTRAINT">DELETE-CONSTRAINT</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">CONSTRAINT</li>  </ul>  <a class="source-link" href="https://github.com/Shinmera/classowary/blob/master/constraint.lisp#L170">Source</a>  </header> <div class="docstring"><pre>Deletes the constraint completely from the solver.
+
+This will render the constraint useless. Operating on it beyond this
+point results in undefined behaviour.
+
+See <a href="#STRUCTURE%20ORG.SHIRAKUMO.CLASSOWARY%3ACONSTRAINT" class="xref">CONSTRAINT (type)</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AMAKE-CONSTRAINT" class="xref">MAKE-CONSTRAINT</a></pre></div> </article> </li>  <li> <article class="definition function callable" id="FUNCTION ORG.SHIRAKUMO.CLASSOWARY:DELETE-VARIABLE"> <header> <span class="visibility">EXTERNAL</span> <span class="type">FUNCTION</span> <h4 class="name"> <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ADELETE-VARIABLE">DELETE-VARIABLE</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">VARIABLE</li>  </ul>  <a class="source-link" href="https://github.com/Shinmera/classowary/blob/master/constraint.lisp#L158">Source</a>  </header> <div class="docstring"><pre>Deletes the variable completely from the solver.
+
+This will remove the variable and all terms in all expressions that
+include it.
+
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AMAKE-VARIABLE" class="xref">MAKE-VARIABLE</a>
+See <a href="#STRUCTURE%20ORG.SHIRAKUMO.CLASSOWARY%3AVARIABLE" class="xref">VARIABLE (type)</a></pre></div> </article> </li>  <li> <article class="definition function callable" id="FUNCTION ORG.SHIRAKUMO.CLASSOWARY:FIND-CONSTRAINT"> <header> <span class="visibility">EXTERNAL</span> <span class="type">FUNCTION</span> <h4 class="name"> <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AFIND-CONSTRAINT">FIND-CONSTRAINT</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">SYMBOL</li>    <li class="argument">SOLVER</li>  </ul>  <a class="source-link" href="https://github.com/Shinmera/classowary/blob/master/constraint.lisp#L65">Source</a>  </header> <div class="docstring"><pre>Returns the constraint associated with the given name, if any.
+
+Note that you are /not/ permitted to SETF this place.
+
+See <a href="#STRUCTURE%20ORG.SHIRAKUMO.CLASSOWARY%3ACONSTRAINT" class="xref">CONSTRAINT (type)</a>
+See <a href="#STRUCTURE%20ORG.SHIRAKUMO.CLASSOWARY%3ASOLVER" class="xref">SOLVER (type)</a></pre></div> </article> </li>  <li> <article class="definition function callable" id="FUNCTION ORG.SHIRAKUMO.CLASSOWARY:(SETF FIND-CONSTRAINT)"> <header> <span class="visibility">EXTERNAL</span> <span class="type">FUNCTION</span> <h4 class="name"> <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3A%28SETF%20FIND-CONSTRAINT%29">(SETF FIND-CONSTRAINT)</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">CONSTRAINT</li>    <li class="argument">SYMBOL</li>    <li class="argument">SOLVER</li>  </ul>  <a class="source-link" href="https://github.com/Shinmera/classowary/blob/master/constraint.lisp#L68">Source</a>  </header> <div class="docstring"><i>No documentation provided.</i></div> </article> </li>  <li> <article class="definition function callable" id="FUNCTION ORG.SHIRAKUMO.CLASSOWARY:FIND-VARIABLE"> <header> <span class="visibility">EXTERNAL</span> <span class="type">FUNCTION</span> <h4 class="name"> <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AFIND-VARIABLE">FIND-VARIABLE</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">SYMBOL</li>    <li class="argument">SOLVER</li>  </ul>  <a class="source-link" href="https://github.com/Shinmera/classowary/blob/master/constraint.lisp#L27">Source</a>  </header> <div class="docstring"><pre>Returns the variable associated with the given name, if any.
+
+Note that you are /not/ permitted to SETF this place.
+
+See <a href="#STRUCTURE%20ORG.SHIRAKUMO.CLASSOWARY%3AVARIABLE" class="xref">VARIABLE (type)</a>
+See <a href="#STRUCTURE%20ORG.SHIRAKUMO.CLASSOWARY%3ASOLVER" class="xref">SOLVER (type)</a></pre></div> </article> </li>  <li> <article class="definition function callable" id="FUNCTION ORG.SHIRAKUMO.CLASSOWARY:(SETF FIND-VARIABLE)"> <header> <span class="visibility">EXTERNAL</span> <span class="type">FUNCTION</span> <h4 class="name"> <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3A%28SETF%20FIND-VARIABLE%29">(SETF FIND-VARIABLE)</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">VARIABLE</li>    <li class="argument">SYMBOL</li>    <li class="argument">SOLVER</li>  </ul>  <a class="source-link" href="https://github.com/Shinmera/classowary/blob/master/constraint.lisp#L30">Source</a>  </header> <div class="docstring"><i>No documentation provided.</i></div> </article> </li>  <li> <article class="definition function callable" id="FUNCTION ORG.SHIRAKUMO.CLASSOWARY:MAKE-CONSTRAINT"> <header> <span class="visibility">EXTERNAL</span> <span class="type">FUNCTION</span> <h4 class="name"> <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AMAKE-CONSTRAINT">MAKE-CONSTRAINT</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">SOLVER</li>    <li class="argument lambda-list-keyword">&amp;KEY</li>    <li class="argument">NAME</li>    <li class="argument">STRENGTH</li>  </ul>  <a class="source-link" href="https://github.com/Shinmera/classowary/blob/master/constraint.lisp#L165">Source</a>  </header> <div class="docstring"><pre>Returns a new constraint for the solver.
+
+The STRENGTH designates how strongly this constraint is adhered. By
+default the strength is +REQUIRED+.
+
+The NAME designates the symbol by which this constraint can later be
+found again.
+
+See STRENGTH (type)
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ADELETE-CONSTRAINT" class="xref">DELETE-CONSTRAINT</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AFIND-CONSTRAINT" class="xref">FIND-CONSTRAINT</a></pre></div> </article> </li>  <li> <article class="definition function callable" id="FUNCTION ORG.SHIRAKUMO.CLASSOWARY:MAKE-SOLVER"> <header> <span class="visibility">EXTERNAL</span> <span class="type">FUNCTION</span> <h4 class="name"> <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AMAKE-SOLVER">MAKE-SOLVER</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument lambda-list-keyword">&amp;KEY</li>    <li class="argument">AUTO-UPDATE</li>  </ul>  <a class="source-link" href="https://github.com/Shinmera/classowary/blob/master/cassowary.lisp#L267">Source</a>  </header> <div class="docstring"><pre>Returns a new solver instance.
+
+If AUTO-UPDATE is T, the solver will automatically call
+UPDATE-VARIABLES when constraints or variables change.
+
+See <a href="#STRUCTURE%20ORG.SHIRAKUMO.CLASSOWARY%3ASOLVER" class="xref">SOLVER (type)</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AAUTO-UPDATE" class="xref">AUTO-UPDATE</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ARESET-SOLVER" class="xref">RESET-SOLVER</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AMAKE-CONSTRAINT" class="xref">MAKE-CONSTRAINT</a>
+See <a href="#MACRO-FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ACONSTRAIN" class="xref">CONSTRAIN</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AMAKE-VARIABLE" class="xref">MAKE-VARIABLE</a>
+See <a href="#MACRO-FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AWITH-VARIABLES" class="xref">WITH-VARIABLES</a></pre></div> </article> </li>  <li> <article class="definition function callable" id="FUNCTION ORG.SHIRAKUMO.CLASSOWARY:MAKE-SUGGESTABLE"> <header> <span class="visibility">EXTERNAL</span> <span class="type">FUNCTION</span> <h4 class="name"> <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AMAKE-SUGGESTABLE">MAKE-SUGGESTABLE</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">VARIABLE</li>    <li class="argument lambda-list-keyword">&amp;OPTIONAL</li>    <li class="argument">STRENGTH</li>  </ul>  <a class="source-link" href="https://github.com/Shinmera/classowary/blob/master/cassowary.lisp#L354">Source</a>  </header> <div class="docstring"><pre>Make the variable suggestable.
+
+This means that you can edit the variable and suggest a value that the
+solver should try to keep steady when solving its system. Typically
+this is used for variables that are constrained by the user somehow.
+
+In order to use SUGGEST, a variable must first be made suggestable.
+
+If the variable is already suggestable, its strength is updated via
+(SETF STRENGTH).
+
+If the variable was not already suggestable, it is suggested to the
+current value of the variable.
+
+The strength of the suggestion is capped to +STRONG+. Any value above
+will automatically be reduced to +STRONG+.
+
+Returns the variable.
+
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ASTRENGTH" class="xref">STRENGTH</a>
+See <a href="#STRUCTURE%20ORG.SHIRAKUMO.CLASSOWARY%3AVARIABLE" class="xref">VARIABLE (type)</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AMAKE-UNSUGGESTABLE" class="xref">MAKE-UNSUGGESTABLE</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ASUGGESTABLE-P" class="xref">SUGGESTABLE-P</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ASUGGEST" class="xref">SUGGEST</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ASTRENGTH" class="xref">STRENGTH</a></pre></div> </article> </li>  <li> <article class="definition function callable" id="FUNCTION ORG.SHIRAKUMO.CLASSOWARY:MAKE-UNSUGGESTABLE"> <header> <span class="visibility">EXTERNAL</span> <span class="type">FUNCTION</span> <h4 class="name"> <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AMAKE-UNSUGGESTABLE">MAKE-UNSUGGESTABLE</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">VARIABLE</li>  </ul>  <a class="source-link" href="https://github.com/Shinmera/classowary/blob/master/cassowary.lisp#L369">Source</a>  </header> <div class="docstring"><pre>Makes the variable unsuggestable again.
+
+After this, SUGGEST will fail unless the variable is explicitly made
+suggestable again.
+
+Returns the variable.
+
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AMAKE-SUGGESTABLE" class="xref">MAKE-SUGGESTABLE</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ASUGGESTABLE-P" class="xref">SUGGESTABLE-P</a>
+See <a href="#STRUCTURE%20ORG.SHIRAKUMO.CLASSOWARY%3AVARIABLE" class="xref">VARIABLE (type)</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ASUGGEST" class="xref">SUGGEST</a></pre></div> </article> </li>  <li> <article class="definition function callable" id="FUNCTION ORG.SHIRAKUMO.CLASSOWARY:MAKE-VARIABLE"> <header> <span class="visibility">EXTERNAL</span> <span class="type">FUNCTION</span> <h4 class="name"> <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AMAKE-VARIABLE">MAKE-VARIABLE</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">SOLVER</li>    <li class="argument lambda-list-keyword">&amp;KEY</li>    <li class="argument">NAME</li>    <li class="argument">STRENGTH</li>  </ul>  <a class="source-link" href="https://github.com/Shinmera/classowary/blob/master/constraint.lisp#L151">Source</a>  </header> <div class="docstring"><pre>Returns a new variable for the solver.
+
+The NAME is an optional identifier for the symbol used for the
+variable by which it can later be found again.
+
+If STRENGTH is given, the variable is made suggestable and
+its strength set accordingly. STRENGTH may also be T in this case, in
+which case the strength used is +STRONG+.
+
+See <a href="#STRUCTURE%20ORG.SHIRAKUMO.CLASSOWARY%3AVARIABLE" class="xref">VARIABLE (type)</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ADELETE-VARIABLE" class="xref">DELETE-VARIABLE</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AMAKE-SUGGESTABLE" class="xref">MAKE-SUGGESTABLE</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AFIND-VARIABLE" class="xref">FIND-VARIABLE</a></pre></div> </article> </li>  <li> <article class="definition function callable" id="FUNCTION ORG.SHIRAKUMO.CLASSOWARY:RELATION"> <header> <span class="visibility">EXTERNAL</span> <span class="type">FUNCTION</span> <h4 class="name"> <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ARELATION">RELATION</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">CONSTRAINT</li>  </ul>  <a class="source-link" href="https://github.com/Shinmera/classowary/blob/master/constraint.lisp#L240">Source</a>  </header> <div class="docstring"><pre>Accessor to the relation of the constraint.
+
+May be one of the following CL symbols:
+
+  &lt;=
+  =
+  &gt;=
+
+See <a href="#STRUCTURE%20ORG.SHIRAKUMO.CLASSOWARY%3ACONSTRAINT" class="xref">CONSTRAINT (type)</a></pre></div> </article> </li>  <li> <article class="definition function callable" id="FUNCTION ORG.SHIRAKUMO.CLASSOWARY:(SETF RELATION)"> <header> <span class="visibility">EXTERNAL</span> <span class="type">FUNCTION</span> <h4 class="name"> <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3A%28SETF%20RELATION%29">(SETF RELATION)</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">RELATION</li>    <li class="argument">CONSTRAINT</li>  </ul>  <a class="source-link" href="https://github.com/Shinmera/classowary/blob/master/constraint.lisp#L243">Source</a>  </header> <div class="docstring"><i>No documentation provided.</i></div> </article> </li>  <li> <article class="definition function callable" id="FUNCTION ORG.SHIRAKUMO.CLASSOWARY:REMOVE-CONSTRAINT"> <header> <span class="visibility">EXTERNAL</span> <span class="type">FUNCTION</span> <h4 class="name"> <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AREMOVE-CONSTRAINT">REMOVE-CONSTRAINT</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">CONSTRAINT</li>  </ul>  <a class="source-link" href="https://github.com/Shinmera/classowary/blob/master/cassowary.lisp#L312">Source</a>  </header> <div class="docstring"><pre>Removes the constraint from its solver.
+
+After this, the constraint will not apply.
+
+If the solver is AUTO-UPDATE, the variables will be updated after this
+operation.
+
+See <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ASOLVER" class="xref">SOLVER</a>
+See <a href="#STRUCTURE%20ORG.SHIRAKUMO.CLASSOWARY%3ACONSTRAINT" class="xref">CONSTRAINT (type)</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AREMOVE-CONSTRAINT" class="xref">REMOVE-CONSTRAINT</a></pre></div> </article> </li>  <li> <article class="definition function callable" id="FUNCTION ORG.SHIRAKUMO.CLASSOWARY:REMOVE-TERM"> <header> <span class="visibility">EXTERNAL</span> <span class="type">FUNCTION</span> <h4 class="name"> <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AREMOVE-TERM">REMOVE-TERM</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">CONSTRAINT</li>    <li class="argument">MULTIPLIER</li>    <li class="argument lambda-list-keyword">&amp;OPTIONAL</li>    <li class="argument">VARIABLE</li>  </ul>  <a class="source-link" href="https://github.com/Shinmera/classowary/blob/master/constraint.lisp#L202">Source</a>  </header> <div class="docstring"><pre>Removes the given term description from the constraint.
+
+This corresponds to a term of either
+  number
+or
+  number*variable
+being removed from the constraint depending on whether the variable is
+given.
+
+Note that adding or removing terms can automatically cancel out as
+soon as either the constant term of the expression reaches zero, or
+the multiplier of a variable term reaches zero. In the latter case,
+the variable term is automatically removed from the expression.
+
+This operation is equivalent to ADD-TERM with the multiplier inverted.
+
+Returns the updated constraint.
+
+See <a href="#STRUCTURE%20ORG.SHIRAKUMO.CLASSOWARY%3ACONSTRAINT" class="xref">CONSTRAINT (type)</a>
+See <a href="#STRUCTURE%20ORG.SHIRAKUMO.CLASSOWARY%3AVARIABLE" class="xref">VARIABLE (type)</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AADD-TERM" class="xref">ADD-TERM</a></pre></div> </article> </li>  <li> <article class="definition function callable" id="FUNCTION ORG.SHIRAKUMO.CLASSOWARY:RESET-CONSTRAINT"> <header> <span class="visibility">EXTERNAL</span> <span class="type">FUNCTION</span> <h4 class="name"> <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ARESET-CONSTRAINT">RESET-CONSTRAINT</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">CONSTRAINT</li>  </ul>  <a class="source-link" href="https://github.com/Shinmera/classowary/blob/master/constraint.lisp#L196">Source</a>  </header> <div class="docstring"><pre>Resets the constraint.
+
+This will remove the constraint, unset its relation, and clear its
+expression of all terms.
+
+Returns the updated constraint.
+
+See <a href="#STRUCTURE%20ORG.SHIRAKUMO.CLASSOWARY%3ACONSTRAINT" class="xref">CONSTRAINT (type)</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AREMOVE-CONSTRAINT" class="xref">REMOVE-CONSTRAINT</a></pre></div> </article> </li>  <li> <article class="definition function callable" id="FUNCTION ORG.SHIRAKUMO.CLASSOWARY:RESET-SOLVER"> <header> <span class="visibility">EXTERNAL</span> <span class="type">FUNCTION</span> <h4 class="name"> <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ARESET-SOLVER">RESET-SOLVER</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">SOLVER</li>    <li class="argument lambda-list-keyword">&amp;OPTIONAL</li>    <li class="argument">CLEAR-CONSTRAINTS</li>  </ul>  <a class="source-link" href="https://github.com/Shinmera/classowary/blob/master/cassowary.lisp#L270">Source</a>  </header> <div class="docstring"><pre>Resets the solver.
+
+This resets all variables and makes them unsuggestable.
+
+If the solver is AUTO-UPDATE, the variables will be updated before this
+operation.
+
+If CLEAR-CONSTRAINTS is T, removes all constraints from the solver.
+
+See <a href="#STRUCTURE%20ORG.SHIRAKUMO.CLASSOWARY%3ASOLVER" class="xref">SOLVER (type)</a></pre></div> </article> </li>  <li> <article class="definition function callable" id="FUNCTION ORG.SHIRAKUMO.CLASSOWARY:STRENGTH"> <header> <span class="visibility">EXTERNAL</span> <span class="type">FUNCTION</span> <h4 class="name"> <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ASTRENGTH">STRENGTH</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">CONSTRAINT</li>  </ul>  <a class="source-link" href="https://github.com/Shinmera/classowary/blob/master/cassowary.lisp#L331">Source</a>  </header> <div class="docstring"><pre>Accessor to the strength of the constraint.
+
+The strength is a positive float, denoting how important this
+constraint is to the overall system. Valid values for the strength are
+positive real numbers and the following keywords:
+
+  :REQUIRED
+  :STRONG
+  :MEDIUM
+  :WEAK
+  :NONE
+
+Each of these keywords corresponds to the constant of the same
+name. If a value that is neither a positive real, nor one of the above
+keywords is set, an error is signalled.
+
+If the solver is AUTO-UPDATE, the variables will be updated after the
+strength is updated.
+
+See <a href="#STRUCTURE%20ORG.SHIRAKUMO.CLASSOWARY%3ACONSTRAINT" class="xref">CONSTRAINT (type)</a>
+See <a href="#VARIABLE%20ORG.SHIRAKUMO.CLASSOWARY%3A%2BREQUIRED%2B" class="xref">+REQUIRED+</a>
+See <a href="#VARIABLE%20ORG.SHIRAKUMO.CLASSOWARY%3A%2BSTRONG%2B" class="xref">+STRONG+</a>
+See <a href="#VARIABLE%20ORG.SHIRAKUMO.CLASSOWARY%3A%2BMEDIUM%2B" class="xref">+MEDIUM+</a>
+See <a href="#VARIABLE%20ORG.SHIRAKUMO.CLASSOWARY%3A%2BWEAK%2B" class="xref">+WEAK+</a>
+See <a href="#VARIABLE%20ORG.SHIRAKUMO.CLASSOWARY%3A%2BNONE%2B" class="xref">+NONE+</a></pre></div> </article> </li>  <li> <article class="definition function callable" id="FUNCTION ORG.SHIRAKUMO.CLASSOWARY:(SETF STRENGTH)"> <header> <span class="visibility">EXTERNAL</span> <span class="type">FUNCTION</span> <h4 class="name"> <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3A%28SETF%20STRENGTH%29">(SETF STRENGTH)</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">STRENGTH</li>    <li class="argument">CONSTRAINT</li>  </ul>  <a class="source-link" href="https://github.com/Shinmera/classowary/blob/master/cassowary.lisp#L334">Source</a>  </header> <div class="docstring"><i>No documentation provided.</i></div> </article> </li>  <li> <article class="definition function callable" id="FUNCTION ORG.SHIRAKUMO.CLASSOWARY:SUGGEST"> <header> <span class="visibility">EXTERNAL</span> <span class="type">FUNCTION</span> <h4 class="name"> <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ASUGGEST">SUGGEST</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">VARIABLE</li>    <li class="argument">VALUE</li>    <li class="argument lambda-list-keyword">&amp;OPTIONAL</li>    <li class="argument">IF-NOT-SUGGESTABLE</li>  </ul>  <a class="source-link" href="https://github.com/Shinmera/classowary/blob/master/cassowary.lisp#L376">Source</a>  </header> <div class="docstring"><pre>Suggest a particular value for the variable.
+
+The solver will try to solve the system while keeping the value of the
+variable to the suggested value. Note however that this does not
+circumvent required constraints.
+
+If the variable is not already suggestable, the value of
+if-not-suggestable becomes important. It may be one of the following:
+  :ERROR             --- An error of type VARIABLE-NOT-SUGGESTABLE is
+                         signalled.
+  :MAKE-SUGGESTABLE  --- The variable is made suggestable with medium
+                         strength.
+  NIL                --- The function simply returns NIL.
+
+If the solver is AUTO-UPDATE, the variables will be updated after this
+operation.
+
+On success, returns the variable.
+
+See <a href="#STRUCTURE%20ORG.SHIRAKUMO.CLASSOWARY%3AVARIABLE" class="xref">VARIABLE (type)</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ASUGGESTABLE-P" class="xref">SUGGESTABLE-P</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AMAKE-SUGGESTABLE" class="xref">MAKE-SUGGESTABLE</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AMAKE-UNSUGGESTABLE" class="xref">MAKE-UNSUGGESTABLE</a>
+See VARIABLE-NOT-SUGGESTABLE</pre></div> </article> </li>  <li> <article class="definition function callable" id="FUNCTION ORG.SHIRAKUMO.CLASSOWARY:SUGGESTABLE-P"> <header> <span class="visibility">EXTERNAL</span> <span class="type">FUNCTION</span> <h4 class="name"> <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ASUGGESTABLE-P">SUGGESTABLE-P</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">VARIABLE</li>  </ul>  <a class="source-link" href="https://github.com/Shinmera/classowary/blob/master/cassowary.lisp#L13">Source</a>  </header> <div class="docstring"><pre>Returns true if the variable is suggestable.
+
+See <a href="#STRUCTURE%20ORG.SHIRAKUMO.CLASSOWARY%3AVARIABLE" class="xref">VARIABLE (type)</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AMAKE-SUGGESTABLE" class="xref">MAKE-SUGGESTABLE</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AMAKE-UNSUGGESTABLE" class="xref">MAKE-UNSUGGESTABLE</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ASUGGEST" class="xref">SUGGEST</a></pre></div> </article> </li>  <li> <article class="definition function callable" id="FUNCTION ORG.SHIRAKUMO.CLASSOWARY:UPDATE-VARIABLES"> <header> <span class="visibility">EXTERNAL</span> <span class="type">FUNCTION</span> <h4 class="name"> <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AUPDATE-VARIABLES">UPDATE-VARIABLES</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">SOLVER</li>  </ul>  <a class="source-link" href="https://github.com/Shinmera/classowary/blob/master/cassowary.lisp#L290">Source</a>  </header> <div class="docstring"><pre>Recomputes the variable values according to the current solver constraints.
+
+You should call this function whenever you are done changing
+constraints or suggesting variables and would like to read out the
+new, computed values for the variables.
+
+Returns the solver.
+
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AAUTO-UPDATE" class="xref">AUTO-UPDATE</a></pre></div> </article> </li>  <li> <article class="definition function callable" id="FUNCTION ORG.SHIRAKUMO.CLASSOWARY:VALUE"> <header> <span class="visibility">EXTERNAL</span> <span class="type">FUNCTION</span> <h4 class="name"> <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AVALUE">VALUE</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">VARIABLE</li>  </ul>  <a class="source-link" href="https://github.com/Shinmera/classowary/blob/master/constraint.lisp#L148">Source</a>  </header> <div class="docstring"><pre>Returns the current value of the variable.
+
+You might need to call UPDATE-VARIABLES on the solver before this
+returns an accurate value for the variable.
+
+Note that for suggestable variables this might return a value
+different from the one previously suggested.
+
+See <a href="#STRUCTURE%20ORG.SHIRAKUMO.CLASSOWARY%3AVARIABLE" class="xref">VARIABLE (type)</a></pre></div> </article> </li>  <li> <article class="definition generic-function callable" id="GENERIC-FUNCTION ORG.SHIRAKUMO.CLASSOWARY:EXPRESSION"> <header> <span class="visibility">EXTERNAL</span> <span class="type">GENERIC-FUNCTION</span> <h4 class="name"> <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AEXPRESSION">EXPRESSION</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">CONDITION</li>  </ul>  </header> <div class="docstring"><pre>Returns the expression associated with the object.
+
+See <a href="#STRUCTURE%20ORG.SHIRAKUMO.CLASSOWARY%3AEXPRESSION" class="xref">EXPRESSION (type)</a>
+See EXPRESSION-UNSATISFIED
+see EXPRESSION-UNBOUND</pre></div> </article> </li>  <li> <article class="definition generic-function callable" id="GENERIC-FUNCTION ORG.SHIRAKUMO.CLASSOWARY:SOLVER"> <header> <span class="visibility">EXTERNAL</span> <span class="type">GENERIC-FUNCTION</span> <h4 class="name"> <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ASOLVER">SOLVER</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">CONDITION</li>  </ul>  </header> <div class="docstring"><pre>Returns the solver associated with the object.
+
+See <a href="#STRUCTURE%20ORG.SHIRAKUMO.CLASSOWARY%3ASOLVER" class="xref">SOLVER (type)</a>
+See <a href="#STRUCTURE%20ORG.SHIRAKUMO.CLASSOWARY%3AVARIABLE" class="xref">VARIABLE (type)</a>
+See <a href="#STRUCTURE%20ORG.SHIRAKUMO.CLASSOWARY%3ACONSTRAINT" class="xref">CONSTRAINT (type)</a>
+See EXPRESSION-UNSATISFIED
+See EXPRESSION-UNBOUND</pre></div> </article> </li>  <li> <article class="definition generic-function callable" id="GENERIC-FUNCTION ORG.SHIRAKUMO.CLASSOWARY:VARIABLE"> <header> <span class="visibility">EXTERNAL</span> <span class="type">GENERIC-FUNCTION</span> <h4 class="name"> <a href="#GENERIC-FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AVARIABLE">VARIABLE</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">CONDITION</li>  </ul>  </header> <div class="docstring"><pre>Returns the variable associated with the object.
+
+See <a href="#STRUCTURE%20ORG.SHIRAKUMO.CLASSOWARY%3AVARIABLE" class="xref">VARIABLE (type)</a>
+See VARIABLE-NOT-SUGGESTABLE</pre></div> </article> </li>  <li> <article class="definition macro callable" id="MACRO-FUNCTION ORG.SHIRAKUMO.CLASSOWARY:CONSTRAIN"> <header> <span class="visibility">EXTERNAL</span> <span class="type">MACRO</span> <h4 class="name"> <a href="#MACRO-FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ACONSTRAIN">CONSTRAIN</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">SOLVER</li>    <li class="argument">CONSTRAINT</li>    <li class="argument lambda-list-keyword">&amp;REST</li>    <li class="argument">ARGS</li>    <li class="argument lambda-list-keyword">&amp;KEY</li>    <li class="argument">NAME</li>    <li class="argument">STRENGTH</li>  </ul>  <a class="source-link" href="https://github.com/Shinmera/classowary/blob/master/constraint.lisp#L314">Source</a>  </header> <div class="docstring"><pre>Constrain the linear system in the solver.
+
+The constraint should be an expression of the following form:
+
+  CONSTRAINT ::= (RELATION EXPRESSION EXPRESSION)
+  RELATION   ::= &lt;= | = | &gt;=
+  EXPRESSION ::= TERM | COMPOUND
+  COMPOUND   ::= (+ EXPRESSION*)
+               | (- EXPRESSION+)
+               | (* EXPRESSION*) 
+               | (/ EXPRESSION+)
+  TERM       ::= variable | real | (quote quoted)
+  variable   --- A CL variable binding name.
+  quoted     --- A symbol naming a solver variable.
+  real       --- A real number.
+
+If a quoted variable is used, the variable is retrieved from the
+solver, or created if it does not exist yet. It will have the name of
+the quoted symbol. Otherwise the variable denotes a CL variable whose
+value must be of type VARIABLE.
+
+If the expression contains non-linear terms, such as the
+multiplication of two variables, or the division by a variable, an
+error is signalled at macro-expansion-time.
+
+This macro is a short-hand to create constraint, add terms, set the
+relation, and add the constraint to the solver.
+
+The new constraint instance is returned.
+
+See <a href="#STRUCTURE%20ORG.SHIRAKUMO.CLASSOWARY%3ACONSTRAINT" class="xref">CONSTRAINT (type)</a>
+See <a href="#STRUCTURE%20ORG.SHIRAKUMO.CLASSOWARY%3ASOLVER" class="xref">SOLVER (type)</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AMAKE-CONSTRAINT" class="xref">MAKE-CONSTRAINT</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AADD-TERM" class="xref">ADD-TERM</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3ARELATION" class="xref">RELATION</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AADD-CONSTRAINT" class="xref">ADD-CONSTRAINT</a></pre></div> </article> </li>  <li> <article class="definition macro callable" id="MACRO-FUNCTION ORG.SHIRAKUMO.CLASSOWARY:WITH-VARIABLES"> <header> <span class="visibility">EXTERNAL</span> <span class="type">MACRO</span> <h4 class="name"> <a href="#MACRO-FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AWITH-VARIABLES">WITH-VARIABLES</a> </h4> <ul class="qualifiers"></ul> <ul class="arguments">  <li class="argument">VARS</li>    <li class="argument">SOLVER</li>    <li class="argument lambda-list-keyword">&amp;BODY</li>    <li class="argument">BODY</li>  </ul>  <a class="source-link" href="https://github.com/Shinmera/classowary/blob/master/constraint.lisp#L253">Source</a>  </header> <div class="docstring"><pre>Convenience macro to create and bind multiple variables at once.
+
+Each binding must follow this structure:
+
+  BINDING  ::= variable | (variable name? strength?)
+  variable --- The CL variable the solver variable is bound to.
+  name     --- The name of the solver variable as a symbol.
+               This can later be used to retrieve the variable. If no
+               explicit name is given, the CL variable name is used.
+  strength --- The strength of the variable if it is newly created.
+
+If a variable with the given name already exists in the solver, it is
+returned. Otherwise, a new variable of the given name is created. If
+NAME is NIL, a new variable is always created.
+
+Note that the variables are /not/ deleted on exit from the body.
+
+See <a href="#STRUCTURE%20ORG.SHIRAKUMO.CLASSOWARY%3AVARIABLE" class="xref">VARIABLE (type)</a>
+See <a href="#STRUCTURE%20ORG.SHIRAKUMO.CLASSOWARY%3ASOLVER" class="xref">SOLVER (type)</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AFIND-VARIABLE" class="xref">FIND-VARIABLE</a>
+See <a href="#FUNCTION%20ORG.SHIRAKUMO.CLASSOWARY%3AMAKE-VARIABLE" class="xref">MAKE-VARIABLE</a></pre></div> </article> </li> </ul> </article> </li> </ul> </section> </article> <script>window.addEventListener("DOMContentLoaded", function(){
+    var unmarkElement = function(el){
+        if(el.tagName === "mark" || el.tagName === "MARK"){
+            [].forEach.call(el.childNodes, function(child){
+                el.parentNode.insertBefore(child, el);
+            });
+            el.parentNode.removeChild(el);
+        }else if(el.parentNode.tagName === "mark"){
+            return unmarkElement(el.parentNode);
+        }
+        return null;
+    }
+
+    var unmarkAll = function(root){
+        root = root || document;
+        [].forEach.call(root.querySelectorAll("mark"), unmarkElement);
+    }
+    
+    var markElement = function(el){
+        if(el.parentNode.tagName === "mark" || el.parentNode.tagName === "MARK"){
+            return el.parentNode;
+        } else {
+            unmarkAll();
+            var marked = document.createElement("mark");
+            el.parentNode.insertBefore(marked, el);
+            marked.appendChild(el);
+            return marked;
+        }
+    }
+
+    var markFragmented = function(){
+        if(window.location.hash){
+            var el = document.getElementById(decodeURIComponent(window.location.hash.substr(1)));
+            if(el) markElement(el);
+        }
+    }
+
+    var registerXrefLink = function(link){
+        var el = document.getElementById(decodeURIComponent(link.getAttribute("href").substr(1)));
+        if(el){
+            link.addEventListener("click", function(){
+                markElement(el);
+            });
+        }
+    }
+
+    var registerXrefLinks = function(root){
+        root = root || document;
+        [].forEach.call(root.querySelectorAll("a.xref"), registerXrefLink);
+    }
+
+    markFragmented();
+    registerXrefLinks();
+}); </script> </body> </html> 
