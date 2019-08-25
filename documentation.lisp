@@ -8,7 +8,7 @@
 
 ;; cassowary.lisp
 (docs:define-docs
-  (function edited-p
+  (function suggestable-p
     "")
   
   (function constrained-p
@@ -29,10 +29,10 @@
   (function strength
     "")
   
-  (function add-edit
+  (function make-suggestable
     "")
   
-  (function delete-edit
+  (function make-unsuggestable
     "")
   
   (function suggest
@@ -56,6 +56,12 @@
     "")
   
   (type expression-unbound
+    "")
+
+  (type variable-not-suggestable
+    "")
+
+  (function variable
     ""))
 
 ;; constraint.lisp
@@ -67,6 +73,9 @@
     "")
   
   (type constraint
+    "")
+
+  (function auto-update
     "")
   
   (function value

@@ -18,6 +18,12 @@
 (defmethod print-object ((solver solver) stream)
   (print-unreadable-object (solver stream :type T :identity T)))
 
+(defun auto-update (solver)
+  (solver-auto-update solver))
+
+(defun (setf auto-update) (value solver)
+  (setf (solver-auto-update solver) value))
+
 (defun find-variable (symbol solver)
   (gethash symbol (solver-variables solver)))
 
@@ -125,9 +131,12 @@
 (defun value (variable)
   (variable-value variable))
 
-(defun make-variable (solver &optional name)
+(defun make-variable (solver &key name strength)
   (let ((variable (%make-variable (mksym 'external name) solver)))
-    (setf (find-variable (variable-symbol variable) solver) variable)))
+    (setf (find-variable (variable-symbol variable) solver) variable)
+    (if strength
+        (make-suggestable variable (if (eq strength T) :strong strength))
+        variable)))
 
 (defun use-variable (variable)
   (when variable
@@ -224,7 +233,9 @@
   (let ((solverg (gensym "SOLVER")))
     `(let ((,solverg ,solver)
            ,@(loop for var in vars
-                   collect `(,var (make-variable ,solverg ,(string var)))))
+                   collect (destructuring-bind (var &optional strength) (if (listp var) var (list var))
+                             `(,var (make-variable ,solverg :name ,(string var)
+                                                            :strength ,strength)))))
        ,@body)))
 
 (defun extract-terms (thing mult)

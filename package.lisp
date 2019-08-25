@@ -13,7 +13,9 @@
    #:expression-unsatisfied
    #:solver
    #:expression
-   #:expression-unbound)
+   #:expression-unbound
+   #:variable-not-suggestable
+   #:variable)
   (:export
    #:+REQUIRED+
    #:+STRONG+
@@ -28,17 +30,18 @@
    #:reset-solver
    #:update-variables
    #:auto-update
-   #:edited-p
+   #:suggestable-p
    #:constrained-p
    #:add-constraint
    #:remove-constraint
-   #:add-edit
+   #:make-suggestable
    #:suggest
-   #:delete-edit
+   #:make-unsuggestable
    #:make-variable
    #:delete-variable
    #:with-variables
    #:value
+   #:auto-update
    #:make-constraint
    #:clone-constraint
    #:reset-constraint

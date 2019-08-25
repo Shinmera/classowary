@@ -13,12 +13,16 @@
   ())
 
 (define-condition expression-unsatisfied (cassowary-condition error)
-  ((solver :initarg :solver)
-   (expression :initarg :expression)))
+  ((solver :initarg :solver :reader solver)
+   (expression :initarg :expression :reader expression)))
 
 (define-condition expression-unbound (cassowary-condition error)
-  ((solver :initarg :solver)
-   (expression :initarg :expression)))
+  ((solver :initarg :solver :reader solver)
+   (expression :initarg :expression :reader expression)))
+
+(define-condition variable-not-suggestable (cassowary-condition error)
+  ((solver :initarg :solver :reader solver)
+   (variable :initarg :variable :reader variable)))
 
 (defmacro when-ok (form &body body)
   `(handler-case ,form

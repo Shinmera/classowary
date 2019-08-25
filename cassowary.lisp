@@ -10,7 +10,7 @@
   `(unwind-protect (progn ,@protected)
      ,unwind))
 
-(defun edited-p (variable)
+(defun suggestable-p (variable)
   (variable-constraint variable))
 
 (defun constrained-p (constraint)
@@ -351,8 +351,7 @@
              (setf (constraint-strength constraint) strength)))))
   strength)
 
-;; FIXME: consider renaming these two
-(defun add-edit (variable strength)
+(defun make-suggestable (variable &optional (strength :strong))
   (assert (null (variable-constraint variable))
           () 'assertion-violated)
   (assert (not (null (variable-symbol variable))))
@@ -365,19 +364,25 @@
       (add-constraint constraint)
       (setf (variable-constraint variable) constraint)
       (setf (variable-edit-value variable) (variable-value variable))
-      constraint)))
+      variable)))
 
-(defun delete-edit (variable)
+(defun make-unsuggestable (variable)
   (when (variable-constraint variable)
     (delete-constraint (variable-constraint variable))
     (setf (variable-constraint variable) NIL)
     (setf (variable-edit-value variable) 0f0)
     variable))
 
-(defun suggest (variable value)
+(defun suggest (variable value &optional (if-not-suggestable :error))
   (unless (variable-constraint variable)
-    (add-edit variable +MEDIUM+)
-    (assert (not (null (variable-constraint variable)))))
+    (ecase if-not-suggestable
+      (error
+       (error 'variable-not-suggestable :variable variable :solver (variable-solver variable)))
+      (create
+       (make-suggestable variable +MEDIUM+)
+       (assert (not (null (variable-constraint variable)))))
+      ((NIL)
+       (return-from suggest NIL))))
   (let* ((value (float value 0f0))
          (delta (- value (variable-edit-value variable)))
          (solver (variable-solver variable)))
