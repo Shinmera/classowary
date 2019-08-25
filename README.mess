@@ -1,1 +1,60 @@
-## DON'T LOOK, AAAAAAAAAAAAAAA
+## About Classowary
+Classowary is an implementation of the linear constraint solver toolkit [Cassowary](https://overconstrained.io). It is a variant of the simplex solver algorithm, specifically designed to allow adding, removing, and updating constraints quickly. This makes it a good candidate for layout computations.
+
+## How To
+After loading Classowary you will likely want to create a local nickname in your package for ``org.shirakumo.classowary``. We will assume that this nickname is called ``cass`` for this tutorial.
+
+:: common lisp
+(defvar *solver* (cass:make-solver))
+
+(cass:with-variables (a b c) *solver*
+  (cass:constrain *solver* (<= 0 a))
+  (cass:constrain *solver* (<= a 10))
+  (cass:constrain *solver* (= b (* (+ 1 a) 5)))
+  (cass:constrain *solver* (= (+ 3 (* 2 c)) (+ a b)))
+  (cass:update-variables *solver*)
+  (values (cass:value a) (cass:value b) (cass:value c)))
+;; => 0 5 1
+::
+
+As you can see, the solver picked only one of many possible solutions. When the system is underconstrained, it isn't predictable which solution you will get, but it should always fulfil all constraints that were given. If the system is overconstrained, Cassowary will try to match them as closely as possible according to each constraint's strength.
+
+Cassowary also allows you to "suggest" a value for a variable. This means that the solver will try to keep the variable to this value if possible.
+
+:: common lisp
+(cass:with-variables (a b c) *solver*
+  (cass:make-suggestable a)
+  (cass:suggest a 5)
+  (cass:update-variables *solver*)
+  (values (cass:value a) (cass:value b) (cass:value c)))
+;; => 5 30 16
+::
+
+This is typically how you will want to impose additional constraints imposed by the user such as when they explicitly move or resize something.
+
+Naturally you can impose additional constraints at a later point as well.
+
+:: common lisp
+(cass:with-variables (a b c) *solver*
+  (cass:constrain *solver* (<= a (/ c 4)) :name 'a)
+  (cass:update-variables *solver*)
+  (values (cass:value a) (cass:value b) (cass:value c)))
+;; => 1 10 4
+::
+
+As you can see, with this additional constraint the solver was no longer able to fulfil our suggested value exactly. We can easily remove the offending constraint again.
+
+:: common lisp
+(cass:delete-constraint (cass:find-constraint 'a *solver*))
+::
+
+Instead of using the ``constrain`` and ``with-variables`` macros, you can also dynamically build the variables and constraints through ``make-variable``, ``make-constraint``, ``add-term``, ``(setf relation)``, and ``add-constraint``. When building constraints and variables, you should make sure to pass the ``:name`` argument so that you can retrieve them from the solver later, or keep references of your own somewhere.
+
+Should a solver or constraint get into a bad state, you can attempt to clear their state out with ``reset-solver`` and ``reset-constraint`` respectively.
+
+## Further Reading
+The Cassowary algorithm is described in the paper "The Cassowary Linear Arithmetic Constraint Solving Algorithm: Interface and Implementation" by Badros and Borning[1]. You can find the website of the original implementation "here"(https://constraints.cs.washington.edu/cassowary/).
+
+This implementation is largely based on the [Amoeba implementation](https://github.com/starwing/amoeba) by Xavier Wang.
+
+[1]: https://constraints.cs.washington.edu/cassowary/cassowary-tr.pdf
