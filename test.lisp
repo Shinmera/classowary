@@ -24,7 +24,7 @@
     (false (cass:edited-p xl))
     (false (cass:edited-p xm))
     (false (cass:edited-p xr))
-    (finish (cass:delete-variable (cass:make-variable solver)))
+    (finish (cass:unuse-variable (cass:make-variable solver)))
     (fail (setf (cass:relation NIL) '>=))
     (let ((c1 (finish (cass:make-constraint solver))))
       (finish (cass:add-term c1 xl 1f0))

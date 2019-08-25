@@ -11,10 +11,10 @@
      ,unwind))
 
 (defun edited-p (variable)
-  (and variable (variable-constraint variable)))
+  (variable-constraint variable))
 
 (defun constrained-p (constraint)
-  (and constraint (constraint-marker constraint)))
+  (constraint-marker constraint))
 
 (defun mark-infeasible (solver expression)
   (unless (expression-infeasible-p expression)
@@ -351,6 +351,7 @@
              (setf (constraint-strength constraint) strength)))))
   strength)
 
+;; FIXME: consider renaming these two
 (defun add-edit (variable strength)
   (assert (null (variable-constraint variable))
           () 'assertion-violated)

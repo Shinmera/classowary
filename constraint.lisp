@@ -122,10 +122,6 @@
           (constraint-other constraint)
           (constraint-strength constraint)))
 
-(defun use-variable (variable)
-  (when variable
-    (incf (variable-use-count variable))))
-
 (defun value (variable)
   (variable-value variable))
 
@@ -133,23 +129,35 @@
   (let ((variable (%make-variable (mksym 'external name) solver)))
     (setf (find-variable (variable-symbol variable) solver) variable)))
 
-(defun delete-variable (variable)
+(defun use-variable (variable)
+  (when variable
+    (incf (variable-use-count variable))))
+
+(defun unuse-variable (variable)
   (when (<= (decf (variable-use-count variable)) 0)
     (setf (find-variable (variable-symbol variable) (variable-solver variable)) NIL)
     (when (variable-constraint variable)
       (remove-constraint (variable-constraint variable)))
     T))
 
+(defun delete-variable (variable)
+  (setf (find-variable (variable-symbol variable) (variable-solver variable)) NIL)
+  (when (variable-constraint variable)
+    (remove-constraint (variable-constraint variable)))
+  (do-expressions (expression (variable-solver variable))
+    (setf (find-term (variable-symbol variable) expression) NIL)))
+
 (defun make-constraint (solver &key (strength :required))
   (let ((constraint (%make-constraint (->strength strength) solver)))
     (setf (find-constraint (expression-key (constraint-expression constraint)) solver) constraint)))
 
+;; FIXME: rethink what this means compared to REMOVE-CONSTRAINT
 (defun delete-constraint (constraint)
   (let ((solver (constraint-solver constraint)))
     (remove-constraint constraint)
     (setf (find-constraint (expression-key (constraint-expression constraint)) solver) NIL)
     (do-terms (term (constraint-expression constraint))
-      (delete-variable (find-variable (term-key term) solver)))))
+      (unuse-variable (find-variable (term-key term) solver)))))
 
 (defun clone-constraint (other &key strength)
   (let ((constraint (make-constraint
@@ -176,7 +184,7 @@
   (remove-constraint constraint)
   (setf (constraint-relation constraint) NIL)
   (do-terms (term (constraint-expression constraint))
-    (delete-variable (find-variable (term-key term) (constraint-solver constraint))))
+    (unuse-variable (find-variable (term-key term) (constraint-solver constraint))))
   (reset-expression (constraint-expression constraint))
   constraint)
 

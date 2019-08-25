@@ -36,7 +36,6 @@
    #:suggest
    #:delete-edit
    #:make-variable
-   #:use-variable
    #:delete-variable
    #:with-variables
    #:value
