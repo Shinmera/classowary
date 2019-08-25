@@ -563,31 +563,31 @@ See TERM"))
 
 ;; toolkit.lisp
 (docs:define-docs
-  (variable +REQUIRED+
+  (cl:variable +REQUIRED+
     "Constant for constraints with a very high weight.
 
 Corresponds to 1e9. You can also specify the keyword :required instead
 of this constant wherever strengths are accepted.")
 
-  (variable +STRONG+
+  (cl:variable +STRONG+
     "Constant for constraints with a high weight.
 
 Corresponds to 1e6. You can also specify the keyword :strong instead
 of this constant wherever strengths are accepted.")
 
-  (variable +MEDIUM+
+  (cl:variable +MEDIUM+
     "Constant for constraints with a medium weight.
 
 Corresponds to 1e3. You can also specify the keyword :medium instead
 of this constant wherever strengths are accepted.")
 
-  (variable +WEAK+
+  (cl:variable +WEAK+
     "Constant for constraints with a weak weight.
 
 Corresponds to 1e0. You can also specify the keyword :weak instead
 of this constant wherever strengths are accepted.")
 
-  (variable +NONE+
+  (cl:variable +NONE+
     "Constant for constraints with no weight.
 
 Corresponds to 0e0. You can also specify the keyword :none instead

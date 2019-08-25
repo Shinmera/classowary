@@ -26,6 +26,11 @@
   (terms (make-hash-table :test 'eq) :type hash-table)
   (constant 0f0 :type single-float))
 
+(defmacro do-terms ((term expression &optional result) &body body)
+  `(loop for ,term being the hash-values of (expression-terms ,expression)
+         do (progn ,@body)
+         finally (return ,result)))
+
 (defmethod print-object ((expression expression) stream)
   (print-unreadable-object (expression stream :type T)
     (format stream "~s ~f"
@@ -48,11 +53,6 @@
   (setf (expression-constant expression) 0f0)
   (clrhash (expression-terms expression))
   expression)
-
-(defmacro do-terms ((term expression &optional result) &body body)
-  `(loop for ,term being the hash-values of (expression-terms ,expression)
-         do (progn ,@body)
-         finally (return ,result)))
 
 (defmethod describe-object ((expression expression) stream)
   (write-sym (expression-key expression) stream)
