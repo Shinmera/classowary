@@ -31,12 +31,14 @@
   (if variable
       (progn
         (setf (gethash symbol (solver-variables solver)) variable)
-        (when (get symbol 'name)
+        (when (symbolp (get symbol 'name ""))
           (setf (gethash (get symbol 'name) (solver-variables solver)) variable)))
       (let ((variable (gethash symbol (solver-variables solver))))
         (when variable
-          (remhash (get (variable-symbol variable) 'name) (solver-variables solver))
-          (remhash symbol (solver-variables solver)))))
+          (let ((symbol (variable-symbol variable)))
+            (when (symbolp (get symbol 'name ""))
+              (remhash (get symbol 'name) (solver-variables solver)))
+            (remhash symbol (solver-variables solver))))))
   variable)
 
 (defmacro do-variables ((variable solver &optional result) &body body)
@@ -69,12 +71,14 @@
   (if constraint
       (progn
         (setf (gethash symbol (solver-constraints solver)) constraint)
-        (when (get symbol 'name)
+        (when (symbolp (get symbol 'name ""))
           (setf (gethash (get symbol 'name) (solver-constraints solver)) constraint)))
       (let ((constraint (gethash symbol (solver-constraints solver))))
         (when constraint
-          (remhash (get (expression-key (constraint-expression constraint)) 'name) (solver-constraints solver))
-          (remhash symbol (solver-constraints solver)))))
+          (let ((symbol (expression-key (constraint-expression constraint))))
+            (when (symbolp (get symbol 'name ""))
+              (remhash (get symbol 'name) (solver-constraints solver)))
+            (remhash symbol (solver-constraints solver))))))
   constraint)
 
 (defmacro do-constraints ((constraint solver &optional result) &body body)
