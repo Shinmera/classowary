@@ -363,8 +363,9 @@ See VARIABLE (type)")
   (function make-variable
     "Returns a new variable for the solver.
 
-The NAME is an optional identifier for the symbol used for the
-variable by which it can later be found again.
+The NAME is an optional identifier for the variable. The name may be a
+string or a symbol. If it is a symbol, the variable can later be
+retrieved by the same symbol again, using FIND-VARIABLE.
 
 If STRENGTH is given, the variable is made suggestable and
 its strength set accordingly. STRENGTH may also be T in this case, in
@@ -390,8 +391,9 @@ See VARIABLE (type)")
 The STRENGTH designates how strongly this constraint is adhered. By
 default the strength is +REQUIRED+.
 
-The NAME designates the symbol by which this constraint can later be
-found again.
+The NAME is an optional identifier for the constraint. The name may be
+a string or a symbol. If it is a symbol, the constraint can later be
+retrieved by the same symbol again, using FIND-CONSTRAINT.
 
 See STRENGTH (type)
 See DELETE-CONSTRAINT
