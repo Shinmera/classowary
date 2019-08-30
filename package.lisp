@@ -50,6 +50,7 @@
    #:reset-constraint
    #:delete-constraint
    #:constrain
+   #:constrain-with
    #:add-term
    #:remove-term
    #:relation

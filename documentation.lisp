@@ -543,7 +543,20 @@ See SOLVER (type)
 See MAKE-CONSTRAINT
 See ADD-TERM
 See RELATION
-See ADD-CONSTRAINT"))
+See ADD-CONSTRAINT")
+
+  (function constrain-with
+    "Constrain the linear system in the solver.
+
+This is like CONSTRAIN, except that this is a function and can thus
+accept run-time expressions. Instead of variables being either literal
+symbols or quoted symbols, you can pass VARIABLE instances or symbols
+to achieve the equivalent effects.
+
+The new constraint instance is returned.
+
+See CONSTRAIN
+See VARIABLE (type)"))
 
 ;; expression.lisp
 (docs:define-docs

@@ -276,7 +276,7 @@
   (etypecase thing
     (real
      (list (float thing 0f0)))
-    (symbol
+    ((or symbol variable)
      (list 0f0 (list thing 1f0)))
     (cons
      (destructuring-bind (op . args) thing
@@ -335,3 +335,20 @@
            (setf (relation ,constraint) ',relation)
            ,@(expand-terms rhs)
            (add-constraint ,constraint))))))
+
+(defun constrain-with (solver constraint &key name (strength :required))
+  (destructuring-bind (relation lhs rhs) constraint
+    (let ((constraint (make-constraint solver :name name :strength strength)))
+      (labels ((expand-terms (terms)
+                 (destructuring-bind (constant &rest terms) (reduce-expression terms)
+                   (add-constant constraint constant)
+                   (loop for (var mult) in terms
+                         for variable = (etypecase var
+                                          (variable var)
+                                          (symbol (or (find-variable var solver)
+                                                      (make-variable solver :name var))))
+                         do (add-variable-term constraint variable mult)))))
+        (expand-terms lhs)
+        (setf (relation constraint) relation)
+        (expand-terms rhs)
+        constraint))))
