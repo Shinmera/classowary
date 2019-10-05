@@ -132,11 +132,7 @@
 
 (defmethod print-object ((constraint constraint) stream)
   (print-unreadable-object (constraint stream :type T)
-    (format stream "~s ~a ~s ~f"
-            (constraint-marker constraint)
-            (constraint-relation constraint)
-            (constraint-other constraint)
-            (constraint-strength constraint))))
+    (describe-object (constraint-expression constraint) stream)))
 
 (defmethod describe-object ((constraint constraint) stream)
   (describe-object (constraint-expression constraint) stream)
@@ -351,4 +347,4 @@
         (expand-terms lhs)
         (setf (relation constraint) relation)
         (expand-terms rhs)
-        constraint))))
+        (add-constraint constraint)))))
