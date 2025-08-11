@@ -4,7 +4,7 @@
   :author "Yukari Hafner <shinmera@tymoon.eu>"
   :maintainer "Yukari Hafner <shinmera@tymoon.eu>"
   :description "Unit tests for Classowary"
-  :homepage "https://github.com/Shinmera/classowary"
+  :homepage "https://shinmera.com/project/classowary"
   :serial T
   :components ((:file "test"))
   :depends-on (:classowary

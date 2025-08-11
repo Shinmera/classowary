@@ -4,7 +4,7 @@
   :author "Yukari Hafner <shinmera@tymoon.eu>"
   :maintainer "Yukari Hafner <shinmera@tymoon.eu>"
   :description "An implementation of the Cassowary linear constraint solver toolkit"
-  :homepage "https://github.com/Shinmera/classowary"
+  :homepage "https://shinmera.com/project/classowary"
   :serial T
   :components ((:file "package")
                (:file "toolkit")
